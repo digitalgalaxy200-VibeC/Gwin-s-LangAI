@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { STRUCTURED_PROGRAM, STAGE_LABELS, STAGE_DESCRIPTIONS } from '../data/structuredProgram';
 import type { StructuredUnit, ProgressionStage } from '../data/structuredProgram';
 import { StructuredLessonConductor } from './StructuredLessonConductor';
-import { ChevronRight, Lock, BookOpen, Zap } from 'lucide-react';
+import { ChevronRight, ChevronDown, Lock, BookOpen, Zap, CheckCircle2 } from 'lucide-react';
 
 // Units unlocked if previous unit is "completed" (stored in localStorage for now)
 // Key: unit id → boolean
@@ -31,6 +31,17 @@ export const StructuredProgram: React.FC<StructuredProgramProps> = ({
 }) => {
   const [activeUnit, setActiveUnit] = useState<StructuredUnit | null>(null);
   const [completedUnits, setCompletedUnits] = useState<Set<string>>(getCompletedUnits);
+  // Accordion state: default open first active stage (survival)
+  const [openStages, setOpenStages] = useState<Record<ProgressionStage, boolean>>({
+    survival: true,
+    functional: false,
+    operational: false,
+    fluent: false,
+  });
+
+  const toggleStage = (stage: ProgressionStage) => {
+    setOpenStages(prev => ({ ...prev, [stage]: !prev[stage] }));
+  };
 
   if (activeUnit) {
     return (
@@ -91,96 +102,121 @@ export const StructuredProgram: React.FC<StructuredProgramProps> = ({
         </div>
       </div>
 
-      {/* Stage groups */}
+      {/* Stage Accordion Groups */}
       {byStage.map(({ stage, units }) => {
         if (units.length === 0) return null;
         const stageCompleted = units.every(u => completedUnits.has(u.id));
         const stageStarted = units.some(u => completedUnits.has(u.id));
         const isLocked = stage !== 'survival' && !stageStarted;
+        const isOpen = !!openStages[stage];
+        const completedInStage = units.filter(u => completedUnits.has(u.id)).length;
 
         return (
-          <div key={stage} className="space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <div>
-                <div className="text-xs font-black text-slate-900">{STAGE_LABELS[stage]}</div>
-                <div className="text-[10px] text-slate-400 mt-0.5">{STAGE_DESCRIPTIONS[stage]}</div>
+          <div key={stage} className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden transition-all">
+            {/* Clickable Accordion Header */}
+            <button
+              type="button"
+              onClick={() => toggleStage(stage)}
+              className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50/80 transition-colors"
+            >
+              <div className="flex-1 min-w-0 pr-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-black text-slate-900">{STAGE_LABELS[stage]}</span>
+                  {stageCompleted && (
+                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Terminé
+                    </span>
+                  )}
+                  {isLocked && (
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Lock className="w-2.5 h-2.5" /> Locked
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{STAGE_DESCRIPTIONS[stage]}</div>
+                <div className="text-[10px] text-indigo-600 font-extrabold mt-1">
+                  {completedInStage} / {units.length} units done
+                </div>
               </div>
-              {stageCompleted && (
-                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Done</span>
-              )}
-              {isLocked && (
-                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Lock className="w-2.5 h-2.5" /> Locked
-                </span>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              {units.map((unit, idx) => {
-                const done = completedUnits.has(unit.id);
-                // Unit is unlocked if it's the first OR previous unit is done
-                const prevDone = idx === 0 || completedUnits.has(units[idx - 1].id);
-                const locked = stage !== 'survival' ? true : !prevDone && idx > 0;
+              <div className="p-2 text-slate-400 hover:text-slate-600 shrink-0">
+                {isOpen ? (
+                  <ChevronDown className="w-5 h-5 text-indigo-600 transition-transform" />
+                ) : (
+                  <ChevronRight className="w-5 h-5 transition-transform" />
+                )}
+              </div>
+            </button>
 
-                return (
-                  <button
-                    key={unit.id}
-                    onClick={() => !locked && setActiveUnit(unit)}
-                    disabled={locked}
-                    className={`w-full text-left bg-white rounded-2xl p-4 border flex items-center gap-4 shadow-sm transition-all active:scale-[0.99] ${
-                      done
-                        ? 'border-emerald-200 bg-emerald-50/50'
-                        : locked
-                        ? 'border-slate-100 opacity-50'
-                        : 'border-slate-100 hover:border-slate-200'
-                    }`}
-                  >
-                    {/* Icon circle */}
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
-                      done ? 'bg-emerald-100' : locked ? 'bg-slate-100' : 'bg-indigo-50'
-                    }`}>
-                      {done ? '✅' : locked ? '🔒' : unit.icon}
-                    </div>
+            {/* Collapsible Content */}
+            {isOpen && (
+              <div className="p-3 pt-0 space-y-2 border-t border-slate-100 bg-slate-50/40">
+                {units.map((unit, idx) => {
+                  const done = completedUnits.has(unit.id);
+                  // Unit is unlocked if it's the first OR previous unit is done
+                  const prevDone = idx === 0 || completedUnits.has(units[idx - 1].id);
+                  const locked = stage !== 'survival' ? true : !prevDone && idx > 0;
 
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${
-                          unit.track === 'A' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
-                        }`}>
-                          Track {unit.track}
-                        </span>
-                        <span className="text-[10px] text-slate-400">{unit.estimatedMinutes} min</span>
+                  return (
+                    <button
+                      key={unit.id}
+                      onClick={() => !locked && setActiveUnit(unit)}
+                      disabled={locked}
+                      className={`w-full text-left bg-white rounded-2xl p-3.5 border flex items-center gap-3.5 shadow-2xs transition-all active:scale-[0.99] ${
+                        done
+                          ? 'border-emerald-200 bg-emerald-50/40'
+                          : locked
+                          ? 'border-slate-100 opacity-50'
+                          : 'border-slate-200/80 hover:border-indigo-300'
+                      }`}
+                    >
+                      {/* Icon circle */}
+                      <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg shrink-0 ${
+                        done ? 'bg-emerald-100' : locked ? 'bg-slate-100' : 'bg-indigo-50'
+                      }`}>
+                        {done ? '✅' : locked ? '🔒' : unit.icon}
                       </div>
-                      <h4 className="font-black text-slate-900 text-sm mt-0.5 truncate">
-                        Unit {unit.unitNumber}: {unit.title}
-                      </h4>
-                      <p className="text-xs text-slate-500 truncate">{unit.subtitle}</p>
 
-                      {/* Block preview pills */}
-                      <div className="flex gap-1 mt-2 flex-wrap">
-                        {unit.blocks.map((b, bi) => (
-                          <span key={bi} className="text-[9px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md capitalize">
-                            {b.type}
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                            unit.track === 'A' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'
+                          }`}>
+                            Track {unit.track}
                           </span>
-                        ))}
-                      </div>
-                    </div>
+                          <span className="text-[10px] text-slate-400">{unit.estimatedMinutes} min</span>
+                        </div>
+                        <h4 className="font-black text-slate-900 text-xs mt-0.5 truncate">
+                          Unit {unit.unitNumber}: {unit.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 truncate">{unit.subtitle}</p>
 
-                    {!locked && (
-                      <div>
-                        {done ? (
-                          <BookOpen className="w-4 h-4 text-emerald-600" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4 text-slate-400" />
-                        )}
+                        {/* Block preview pills */}
+                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                          {unit.blocks.map((b, bi) => (
+                            <span key={bi} className="text-[8px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md capitalize">
+                              {b.type}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    )}
-                    {locked && <Lock className="w-4 h-4 text-slate-300 shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
+
+                      {!locked && (
+                        <div>
+                          {done ? (
+                            <BookOpen className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-slate-400" />
+                          )}
+                        </div>
+                      )}
+                      {locked && <Lock className="w-4 h-4 text-slate-300 shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       })}
