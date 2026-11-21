@@ -113,7 +113,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     const check = emailService.verifyOtp(email, otpInput);
     if (check.valid && createdUserTemp) {
-      setSuccessMsg('Email verified successfully! Welcome to French AI Tutor.');
+      setSuccessMsg('Email verified successfully! Welcome to Polyglot.');
       setTimeout(() => {
         onSuccess(createdUserTemp);
         onClose();

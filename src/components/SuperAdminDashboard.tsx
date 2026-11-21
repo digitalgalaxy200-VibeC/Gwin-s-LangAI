@@ -42,7 +42,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
   const [emailServiceId, setEmailServiceId] = useState('');
   const [emailTemplateId, setEmailTemplateId] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
-  const [senderName, setSenderName] = useState('French AI Tutor');
+  const [senderName, setSenderName] = useState('Polyglot');
   const [emailSuccess, setEmailSuccess] = useState('');
 
   // Stats state
@@ -88,7 +88,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
       setEmailServiceId(emailCfg.serviceId || '');
       setEmailTemplateId(emailCfg.templateId || '');
       setSenderEmail(emailCfg.senderEmail);
-      setSenderName(emailCfg.senderName || 'French AI Tutor');
+      setSenderName(emailCfg.senderName || 'Polyglot');
     }
   }, [isOpen]);
 
@@ -153,7 +153,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
       provider: emailProvider,
       apiKey: emailApiKey.trim(),
       senderEmail: senderEmail.trim(),
-      senderName: senderName.trim() || 'French AI Tutor',
+      senderName: senderName.trim() || 'Polyglot',
       ...(isEmailJs
         ? { serviceId: emailServiceId.trim(), templateId: emailTemplateId.trim() }
         : {}),

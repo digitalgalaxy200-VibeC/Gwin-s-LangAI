@@ -13,9 +13,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'pwa-icon.svg', 'sql-wasm.wasm'],
       manifest: {
-        name: 'French AI Tutor',
-        short_name: 'FrenchTutor',
-        description: 'Offline-First AI-Assisted French Language Learning & Spoken Training',
+        name: 'Polyglot',
+        short_name: 'Polyglot',
+        description: 'Offline-First Military-Grade High-Frequency Language Acquisition Platform',
         theme_color: '#4338ca',
         background_color: '#0f172a',
         display: 'standalone',

@@ -53,7 +53,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
     en: {
       topBannerTag: "New Protocol",
       topBannerText: "Operational Spoken French & English: Learn the top 300 high-frequency reflexes in 14 days.",
-      appTitle: "Polyglot Protocol",
+      appTitle: "Polyglot",
       ciaBadge: "CIA Pattern",
       appSubtitle: "Military-Grade Spoken Fluency • 100% Offline",
       loginBtn: "Learner Login",
@@ -169,7 +169,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
     fr: {
       topBannerTag: "Nouveau Protocole",
       topBannerText: "Français & Anglais Parlé Opérationnel : Maîtrisez les 300 réflexes à haute fréquence en 14 jours.",
-      appTitle: "Protocole Polyglotte",
+      appTitle: "Polyglot",
       ciaBadge: "Méthode CIA",
       appSubtitle: "Aisance Orale de Précision • 100% Hors-Ligne",
       loginBtn: "Connexion",

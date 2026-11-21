@@ -113,7 +113,7 @@ export const emailService = {
               to_email: recipientEmail.trim(),
               to_name: recipientName,
               otp: otp,
-              from_name: config.senderName || 'French AI Tutor',
+              from_name: config.senderName || 'Polyglot',
               reply_to: config.senderEmail.trim(),
             },
           }),
@@ -135,17 +135,17 @@ export const emailService = {
             'Authorization': `Bearer ${config.apiKey.trim()}`,
           },
           body: JSON.stringify({
-            from: `${config.senderName || 'French AI Tutor'} <${config.senderEmail.trim()}>`,
+            from: `${config.senderName || 'Polyglot'} <${config.senderEmail.trim()}>`,
             to: [recipientEmail.trim()],
-            subject: '🇫🇷 Your French AI Tutor Verification Code',
+            subject: '🇫🇷 Your Polyglot Verification Code',
             html: `
               <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px;">
                 <h2 style="color: #4338ca; margin-top: 0;">Bienvenue, ${recipientName} !</h2>
-                <p style="color: #475569; font-size: 15px;">Welcome to your personalized French learning platform. Use the verification code below to confirm your account and start speaking:</p>
+                <p style="color: #475569; font-size: 15px;">Welcome to your personalized Polyglot platform. Use the verification code below to confirm your account and start speaking:</p>
                 <div style="background: #f1f5f9; padding: 18px; border-radius: 12px; text-align: center; margin: 24px 0;">
                   <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #1e1b4b;">${otp}</span>
                 </div>
-                <p style="color: #94a3b8; font-size: 12px;">This code will expire in 15 minutes. If you did not sign up for French AI Tutor, please ignore this email.</p>
+                <p style="color: #94a3b8; font-size: 12px;">This code will expire in 15 minutes. If you did not sign up for Polyglot, please ignore this email.</p>
               </div>
             `,
           }),
@@ -167,7 +167,7 @@ export const emailService = {
             'api-key': config.apiKey.trim(),
           },
           body: JSON.stringify({
-            sender: { name: config.senderName || 'French AI Tutor', email: config.senderEmail.trim() },
+            sender: { name: config.senderName || 'Polyglot', email: config.senderEmail.trim() },
             to: [{ email: recipientEmail.trim(), name: recipientName }],
             subject: '🇫🇷 Your Verification Code',
             htmlContent: `<p>Your verification code is: <strong>${otp}</strong></p>`,
