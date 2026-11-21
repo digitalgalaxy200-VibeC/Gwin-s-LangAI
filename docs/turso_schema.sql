@@ -73,10 +73,33 @@ CREATE TABLE IF NOT EXISTS sync_events (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ── 6. PERFORMANCE INDEXES ───────────────────────────────────
+-- ── 6. SHARED PLATFORM CONTENT CACHE ────────────────────────
+-- Cross-user vocabulary & AI content cache.
+-- NOT partitioned by user_id — this is intentionally shared.
+-- If User A generates an AI explanation for "négocier",
+-- User B hitting that same word reuses the cached content instantly.
+--
+-- Key format: "{word}:{sourceLang}:{targetLang}:{contentType}"
+-- Content types: translation | phonetic | example_sentence |
+--                ai_explanation | ai_roleplay_line
+CREATE TABLE IF NOT EXISTS shared_content_cache (
+  cache_key       TEXT PRIMARY KEY,           -- "{word}:{src}:{tgt}:{type}"
+  content         TEXT NOT NULL,              -- Cached string value (may be JSON)
+  content_type    TEXT NOT NULL,              -- translation | phonetic | example_sentence | ai_explanation | ai_roleplay_line
+  source_lang     TEXT NOT NULL DEFAULT 'fr', -- Source language code
+  target_lang     TEXT NOT NULL DEFAULT 'en', -- Target language code
+  hit_count       INTEGER NOT NULL DEFAULT 0, -- How many times served from cache
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  expires_at      TEXT                        -- NULL = never expires (structural data)
+);
+
+-- ── 7. PERFORMANCE INDEXES ───────────────────────────────────
 -- Guarantees sub-millisecond retrieval filtered by user_id
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_progress_user ON user_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_weaknesses_user ON user_weaknesses(user_id);
 CREATE INDEX IF NOT EXISTS idx_translations_user ON user_translations(user_id);
 CREATE INDEX IF NOT EXISTS idx_sync_events_user ON sync_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_cache_type ON shared_content_cache(content_type);
+CREATE INDEX IF NOT EXISTS idx_cache_hits ON shared_content_cache(hit_count DESC);

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import type { UserProfile } from './types/database';
 import { profileRepo } from './repositories/profileRepository';
 import { tursoService } from './services/tursoService';
+import { sharedContentCache } from './services/sharedContentCache';
+import { OFFLINE_LEXICON } from './services/offlineTranslationService';
 import { PublicLandingPage } from './components/PublicLandingPage';
 import { AuthModal } from './components/AuthModal';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
@@ -17,6 +19,13 @@ export default function App() {
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [adminAutoOpen, setAdminAutoOpen] = useState(false);
+
+  useEffect(() => {
+    // ── Shared content cache: warm up L1 from L2, seed from lexicon ──
+    sharedContentCache.purgeExpired();
+    sharedContentCache.warmUp();
+    sharedContentCache.seedFromLexicon(OFFLINE_LEXICON);
+  }, []);
 
   useEffect(() => {
     // Hidden bootstrap entry: visit #admin to open the portal without a
