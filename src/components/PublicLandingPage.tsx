@@ -21,13 +21,15 @@ import {
 interface PublicLandingPageProps {
   onGetStarted: () => void;
   onSignIn: () => void;
+  onOpenSuperAdmin?: () => void;
 }
 
 type Lang = 'en' | 'fr';
 
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onGetStarted,
-  onSignIn
+  onSignIn,
+  onOpenSuperAdmin,
 }) => {
   const [lang, setLang] = useState<Lang>('en');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -770,6 +772,16 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             <span>PWA Offline-First</span>
             <span>Turso Cloud Isolated</span>
             <span>Military-Grade Fluency</span>
+            {onOpenSuperAdmin && (
+              <button
+                type="button"
+                onClick={onOpenSuperAdmin}
+                className="text-slate-600 hover:text-slate-300 transition-colors cursor-pointer"
+                title={cur.footerAdmin}
+              >
+                {cur.footerAdmin}
+              </button>
+            )}
           </div>
         </div>
       </footer>

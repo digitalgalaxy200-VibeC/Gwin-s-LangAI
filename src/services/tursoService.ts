@@ -172,6 +172,7 @@ export class TursoService {
     const passHash = await hashPassword(passwordPlain);
 
     // If online with Turso
+    let cloudError = '';
     if (this.client) {
       try {
         const res = await this.client.execute({
@@ -207,8 +208,9 @@ export class TursoService {
         await this.pullUserDataFromCloud(user.id);
 
         return { success: true, user };
-      } catch {
-        // If network fails, try local login fallback
+      } catch (err: unknown) {
+        // Remember why the cloud call failed so the user gets a useful message
+        cloudError = err instanceof Error ? err.message : String(err);
       }
     }
 
@@ -253,7 +255,18 @@ export class TursoService {
       return { success: true, user: superAdminUser };
     }
 
-    return { success: false, error: 'Cannot connect to server. Check credentials or internet.' };
+    if (!this.client) {
+      return {
+        success: false,
+        error:
+          'This device is not connected to the database yet. Open the Super Admin Portal and save your Turso URL and auth token.',
+      };
+    }
+
+    return {
+      success: false,
+      error: `Cannot connect to server: ${cloudError || 'the database returned no result.'}`,
+    };
   }
 
   public logout(): void {
