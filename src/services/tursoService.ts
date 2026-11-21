@@ -35,6 +35,11 @@ const CONFIG_STORAGE_KEY = 'turso_db_config_v1';
 const AUTH_USER_KEY = 'turso_current_user_v1';
 const PENDING_QUEUE_KEY = 'turso_pending_sync_queue_v1';
 
+// Build-time credentials so a device never needs the admin panel to connect.
+// Anything in VITE_* is inlined into the bundle and readable by every visitor.
+const ENV_DB_URL = (import.meta.env.VITE_TURSO_URL as string | undefined)?.trim();
+const ENV_DB_TOKEN = (import.meta.env.VITE_TURSO_TOKEN as string | undefined)?.trim();
+
 // Simple SHA-256 password hash for client-side privacy
 async function hashPassword(password: string): Promise<string> {
   const enc = new TextEncoder();
@@ -69,6 +74,17 @@ export class TursoService {
       this.config = null;
       this.client = null;
     }
+
+    // No device-local config: fall back to the build-time credentials
+    if (!this.client && ENV_DB_URL && ENV_DB_TOKEN) {
+      this.config = { databaseUrl: ENV_DB_URL, authToken: ENV_DB_TOKEN };
+      try {
+        this.client = createClient({ url: ENV_DB_URL, authToken: ENV_DB_TOKEN });
+      } catch {
+        this.client = null;
+      }
+    }
+
     return this.config;
   }
 
