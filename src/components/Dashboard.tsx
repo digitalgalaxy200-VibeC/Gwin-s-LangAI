@@ -14,6 +14,7 @@ import { WeeklyRhythm, buildWeaknessReviewUnit } from './WeeklyRhythm';
 import { StructuredLessonConductor } from './StructuredLessonConductor';
 import { tursoService, type TursoUser } from '../services/tursoService';
 import { AuthModal } from './AuthModal';
+import { SuperAdminDashboard } from './SuperAdminDashboard';
 import { 
   BookOpen, 
   MessageSquare, 
@@ -32,7 +33,8 @@ import {
   Database,
   LogIn,
   LogOut,
-  UserCheck
+  UserCheck,
+  ShieldCheck
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -54,6 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   // Turso Multi-Tenant Account states
   const [currentUser, setCurrentUser] = useState<TursoUser | null>(tursoService.getCurrentUser());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [tursoUrlInput, setTursoUrlInput] = useState('');
   const [tursoTokenInput, setTursoTokenInput] = useState('');
   const [tursoSaved, setTursoSaved] = useState(tursoService.isConfigured());
@@ -459,6 +462,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
               )}
             </div>
 
+            {/* Super Admin Dashboard Trigger */}
+            <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-3xl p-5 text-white shadow-md flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Master Administrator</span>
+                </div>
+                <h4 className="text-sm font-black text-white">Super Admin Portal</h4>
+                <p className="text-[11px] text-slate-300">
+                  Manage Turso credentials & view all learner consistency stats.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAdminOpen(true)}
+                className="px-3.5 py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black rounded-xl text-xs shadow-xs transition-all shrink-0 ml-2"
+              >
+                Open Admin
+              </button>
+            </div>
+
             {/* Individual Account Status */}
             <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
@@ -652,6 +677,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
         onSuccess={(user) => {
           setCurrentUser(user);
         }}
+      />
+
+      {/* Super Admin Dashboard Modal (Protected by Master PIN) */}
+      <SuperAdminDashboard
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
       />
     </div>
   );
