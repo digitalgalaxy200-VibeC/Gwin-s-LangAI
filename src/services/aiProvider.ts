@@ -1,12 +1,18 @@
 import type { IAIProvider, AIResponse } from '../types/ai';
 import { sharedContentCache } from './sharedContentCache';
+import { getUserLanguagePair, languageName } from './languageContext';
 
 export class DeepSeekProvider implements IAIProvider {
   public async askTutor(userPrompt: string, apiKey?: string): Promise<AIResponse> {
+    const { native, target } = getUserLanguagePair();
+    const targetName = languageName(target);
+    const nativeName = languageName(native);
+
     // ── Shared cache lookup (L1 → L2) ────────────────────────
-    // Key the AI explanation by the full prompt text so the exact
-    // same question from any user returns instantly without an API call.
-    const cached = sharedContentCache.get(userPrompt, 'any', 'any', 'ai_explanation');
+    // Keyed by prompt and language pair, so the same question asked for
+    // a different target language is never served the wrong answer.
+    const cacheKey = `${userPrompt}::${native}->${target}`;
+    const cached = sharedContentCache.get(cacheKey, native, target, 'ai_explanation');
     if (cached) {
       try {
         const parsed = JSON.parse(cached) as AIResponse;
@@ -34,13 +40,13 @@ export class DeepSeekProvider implements IAIProvider {
           messages: [
             {
               role: 'system',
-              content: `You are an expert French Language Tutor. The user may ask questions in English, French, or mixed English/French (e.g. "Bonjour, je voudrais parler avec... I don't know how to say manager").
+              content: `You are an expert ${targetName} Language Tutor. The learner already speaks ${nativeName} and may ask in ${nativeName}, ${targetName}, or a mix of both (e.g. "Bonjour, je voudrais parler avec... I don't know how to say manager").
 Always return a strict JSON object with:
 {
-  "frenchText": "natural authentic French sentence",
-  "englishTranslation": "natural English translation",
+  "targetText": "natural, authentic ${targetName} sentence answering the learner",
+  "nativeText": "natural ${nativeName} translation of targetText",
   "formality": "formal" | "informal" | "neutral",
-  "explanation": "brief conversational explanation or note"
+  "explanation": "brief explanation in ${nativeName}"
 }`
             },
             {
@@ -59,10 +65,14 @@ Always return a strict JSON object with:
 
       const json = await response.json();
       const content = JSON.parse(json.choices[0].message.content);
+      const targetText = content.targetText ?? content.frenchText ?? '';
+      const nativeText = content.nativeText ?? content.englishTranslation ?? '';
 
       const result: AIResponse = {
-        frenchText: content.frenchText,
-        englishTranslation: content.englishTranslation,
+        frenchText: targetText,
+        englishTranslation: nativeText,
+        targetText,
+        nativeText,
         formality: content.formality || 'neutral',
         explanation: content.explanation,
         retrievalLevel: 3,
@@ -71,7 +81,7 @@ Always return a strict JSON object with:
 
       // ── Write-through to shared cache ───────────────────────
       // Any future user asking the identical prompt skips this call.
-      sharedContentCache.set(userPrompt, 'any', 'any', 'ai_explanation', JSON.stringify(result));
+      sharedContentCache.set(cacheKey, native, target, 'ai_explanation', JSON.stringify(result));
       return result;
     } catch (err) {
       console.warn('[DeepSeekProvider] API call failed, using heuristic fallback:', err);
@@ -84,10 +94,13 @@ Always return a strict JSON object with:
     messageHistory: { role: 'user' | 'assistant'; content: string }[],
     apiKey?: string
   ): Promise<{ responseFr: string; responseEn: string; correction?: string }> {
-    // Build a cache key from scenario + last user message
+    // Build a cache key from language pair, scenario and last user message
+    const { native, target } = getUserLanguagePair();
+    const targetName = languageName(target);
+    const nativeName = languageName(native);
     const lastMsg = messageHistory[messageHistory.length - 1]?.content || '';
-    const roleplayCacheKey = `${scenario.substring(0, 60)}::${lastMsg.substring(0, 80)}`;
-    const cachedRoleplay = sharedContentCache.get(roleplayCacheKey, 'any', 'any', 'ai_roleplay_line');
+    const roleplayCacheKey = `${native}->${target}::${scenario.substring(0, 60)}::${lastMsg.substring(0, 80)}`;
+    const cachedRoleplay = sharedContentCache.get(roleplayCacheKey, native, target, 'ai_roleplay_line');
     if (cachedRoleplay) {
       try {
         const parsed = JSON.parse(cachedRoleplay) as { responseFr: string; responseEn: string; correction?: string };
@@ -112,7 +125,14 @@ Always return a strict JSON object with:
           messages: [
             {
               role: 'system',
-              content: `You are participating in a realistic French spoken roleplay scenario: "${scenario}".\nThe user may speak in French or mixed French/English.\nPlay your role naturally. Always return a strict JSON object with:\n{\n  "responseFr": "your response in natural French",\n  "responseEn": "English translation of your response",\n  "correction": "optional friendly tip if the user made a grammar error or mixed language"\n}`
+              content: `You are participating in a realistic ${targetName} spoken roleplay scenario: "${scenario}".
+The learner speaks ${nativeName} and may answer in ${targetName}, ${nativeName}, or a mix of both.
+Play your role naturally in ${targetName}. Always return a strict JSON object with:
+{
+  "responseTarget": "your response in natural ${targetName}",
+  "responseNative": "${nativeName} translation of your response",
+  "correction": "optional friendly tip in ${nativeName} if the learner made a grammar error or mixed languages"
+}`
             },
             ...messageHistory
           ],
@@ -122,10 +142,15 @@ Always return a strict JSON object with:
       });
 
       const json = await response.json();
-      const result = JSON.parse(json.choices[0].message.content) as { responseFr: string; responseEn: string; correction?: string };
+      const parsed = JSON.parse(json.choices[0].message.content);
+      const result = {
+        responseFr: parsed.responseTarget ?? parsed.responseFr ?? '',
+        responseEn: parsed.responseNative ?? parsed.responseEn ?? '',
+        correction: parsed.correction,
+      };
 
       // ── Write-through to shared roleplay cache ──────────────
-      sharedContentCache.set(roleplayCacheKey, 'any', 'any', 'ai_roleplay_line', JSON.stringify(result), 30);
+      sharedContentCache.set(roleplayCacheKey, native, target, 'ai_roleplay_line', JSON.stringify(result), 30);
       return result;
     } catch (e) {
       return this.heuristicRoleplay(scenario, lastMsg);

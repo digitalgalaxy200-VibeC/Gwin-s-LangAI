@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { aiProvider } from '../services/aiProvider';
 import { audioEngine } from '../services/audioEngine';
+import { getUserLanguagePair } from '../services/languageContext';
 import { Send, Volume2, ArrowLeft, Bot, User, AlertCircle } from 'lucide-react';
 
 interface RoleplayProps {
@@ -21,12 +22,19 @@ export const RoleplayRoom: React.FC<RoleplayProps> = ({
   scenarioContext,
   onBack,
 }) => {
+  const { target: targetLang } = getUserLanguagePair();
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      contentFr: 'Bonjour ! Comment puis-je vous aider aujourd’hui ?',
-      contentEn: 'Hello! How may I help you today?',
-    }
+    targetLang === 'fr'
+      ? {
+          role: 'assistant',
+          contentFr: 'Bonjour ! Comment puis-je vous aider aujourd’hui ?',
+          contentEn: 'Hello! How may I help you today?',
+        }
+      : {
+          role: 'assistant',
+          contentFr: 'Hello! How may I help you today?',
+          contentEn: 'Bonjour ! Comment puis-je vous aider aujourd’hui ?',
+        },
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -52,7 +60,11 @@ export const RoleplayRoom: React.FC<RoleplayProps> = ({
         content: m.contentFr
       }));
 
-      const reply = await aiProvider.roleplayChat(scenarioTitle, historyPayload);
+      const reply = await aiProvider.roleplayChat(
+        scenarioTitle,
+        historyPayload,
+        localStorage.getItem('deepseek_api_key') ?? undefined
+      );
 
       setMessages([
         ...updatedMessages,
@@ -64,8 +76,8 @@ export const RoleplayRoom: React.FC<RoleplayProps> = ({
         }
       ]);
 
-      // Automatically speak French response
-      audioEngine.playFrench(reply.responseFr);
+      // Automatically speak the response in the learner's target language
+      audioEngine.play(reply.responseFr, targetLang);
     } catch (err) {
       console.error(err);
     } finally {
@@ -121,7 +133,7 @@ export const RoleplayRoom: React.FC<RoleplayProps> = ({
 
               {m.role === 'assistant' && (
                 <button
-                  onClick={() => audioEngine.playFrench(m.contentFr)}
+                  onClick={() => audioEngine.play(m.contentFr, targetLang)}
                   className="pt-1 flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-700"
                 >
                   <Volume2 className="w-3.5 h-3.5" />

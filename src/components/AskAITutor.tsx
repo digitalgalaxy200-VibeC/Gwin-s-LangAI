@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { retrievalEngine } from '../services/retrievalEngine';
 import { aiProvider } from '../services/aiProvider';
 import { audioEngine } from '../services/audioEngine';
+import { getUserLanguagePair } from '../services/languageContext';
 import { 
   Sparkles, 
   Send, 
@@ -19,6 +20,7 @@ export const AskAITutor: React.FC = () => {
   const [currentResponse, setCurrentResponse] = useState<AIResponse | null>(null);
   const [history, setHistory] = useState<CachedTranslationItem[]>([]);
   const [stats, setStats] = useState({ level1Hits: 0, level2Hits: 0, level3Hits: 0, totalSavedUsd: 0 });
+  const { target: targetLang } = getUserLanguagePair();
 
   useEffect(() => {
     refreshHistoryAndStats();
@@ -147,10 +149,10 @@ export const AskAITutor: React.FC = () => {
 
           <div className="space-y-1">
             <div className="text-xl font-bold text-slate-900">
-              "{currentResponse.frenchText}"
+              "{currentResponse.targetText ?? currentResponse.frenchText}"
             </div>
             <div className="text-sm font-medium text-slate-500">
-              {currentResponse.englishTranslation}
+              {currentResponse.nativeText ?? currentResponse.englishTranslation}
             </div>
           </div>
 
@@ -161,7 +163,7 @@ export const AskAITutor: React.FC = () => {
           )}
 
           <button
-            onClick={() => audioEngine.playFrench(currentResponse.frenchText)}
+            onClick={() => audioEngine.play(currentResponse.targetText ?? currentResponse.frenchText, targetLang)}
             className="w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors"
           >
             <Volume2 className="w-4 h-4" />
@@ -194,7 +196,7 @@ export const AskAITutor: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => audioEngine.playFrench(item.frenchText)}
+                  onClick={() => audioEngine.play(item.frenchText, targetLang)}
                   className="p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-indigo-600 transition-colors shrink-0"
                 >
                   <Volume2 className="w-4 h-4" />

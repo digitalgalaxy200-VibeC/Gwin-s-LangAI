@@ -1,4 +1,5 @@
 import type { AudioCacheItem } from '../types/curriculum';
+import { speechLocale } from './languageContext';
 
 class AudioEngineService {
   private playbackRate: number = 0.9;
@@ -35,11 +36,28 @@ class AudioEngineService {
     return this.playbackRate;
   }
 
-  public async playFrench(text: string, overrideSpeed?: number): Promise<void> {
+  /** Picks the best installed voice for a language, ignoring the cached one. */
+  private pickVoice(lang: string): SpeechSynthesisVoice | null {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices();
+    const code = lang.toLowerCase();
+    return (
+      voices.find(v => v.lang.toLowerCase().startsWith(code) && /natural|google/i.test(v.name)) ||
+      voices.find(v => v.lang.toLowerCase().startsWith(code)) ||
+      null
+    );
+  }
+
+  /**
+   * Speaks text in the given language. Defaults to French only for legacy
+   * callers; new code should pass the learner's target language.
+   */
+  public async play(text: string, lang: string = 'fr', overrideSpeed?: number): Promise<void> {
     const rate = overrideSpeed ?? this.playbackRate;
+    const locale = speechLocale(lang);
 
     // Check local audio cache if present in localStorage
-    const cacheKey = this.computeAudioHash(text, 'fr-FR', rate);
+    const cacheKey = this.computeAudioHash(text, locale, rate);
     const cached = localStorage.getItem(`audio_cache_${cacheKey}`);
 
     if (cached) {
@@ -60,16 +78,22 @@ class AudioEngineService {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel(); // Stop any pending utterances
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
+      utterance.lang = locale;
       utterance.rate = rate;
-      if (this.voice) {
-        utterance.voice = this.voice;
+      const voice = this.pickVoice(locale) || this.voice;
+      if (voice) {
+        utterance.voice = voice;
       }
 
       window.speechSynthesis.speak(utterance);
     } else {
       console.warn('[AudioEngine] No speech synthesis available on this device.');
     }
+  }
+
+  /** @deprecated Use play(text, 'fr') — kept for existing call sites. */
+  public async playFrench(text: string, overrideSpeed?: number): Promise<void> {
+    return this.play(text, 'fr', overrideSpeed);
   }
 
   public computeAudioHash(text: string, lang: string, speed: number): string {

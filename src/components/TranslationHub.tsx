@@ -5,6 +5,7 @@ import {
   type TranslationHistoryItem 
 } from '../services/offlineTranslationService';
 import { audioEngine } from '../services/audioEngine';
+import { getUserLanguagePair, languageName } from '../services/languageContext';
 import { DeepSeekProvider } from '../services/aiProvider';
 import { 
   ArrowLeftRight, 
@@ -20,7 +21,8 @@ import {
 } from 'lucide-react';
 
 export const TranslationHub: React.FC = () => {
-  const [sourceLang, setSourceLang] = useState<'en' | 'fr'>('en');
+  const { native } = getUserLanguagePair();
+  const [sourceLang, setSourceLang] = useState<'en' | 'fr'>(native === 'fr' ? 'fr' : 'en');
   const [inputText, setInputText] = useState('');
   const [currentResult, setCurrentResult] = useState<TranslationResult | null>(null);
   const [history, setHistory] = useState<TranslationHistoryItem[]>([]);
@@ -56,8 +58,8 @@ export const TranslationHub: React.FC = () => {
       try {
         const provider = new DeepSeekProvider();
         const prompt = sourceLang === 'en'
-          ? `Translate this English word or sentence into natural French: "${text}"`
-          : `Translate this French word or sentence into English: "${text}"`;
+          ? `Translate this ${languageName('en')} word or sentence into natural ${languageName('fr')}: "${text}"`
+          : `Translate this ${languageName('fr')} word or sentence into natural ${languageName('en')}: "${text}"`;
         const aiRes = await provider.askTutor(prompt, apiKey);
         
         const finalRes: TranslationResult = {
@@ -109,19 +111,8 @@ export const TranslationHub: React.FC = () => {
   };
 
   const handlePlayAudio = (text: string, lang: 'en' | 'fr') => {
-    if (lang === 'fr') {
-      audioEngine.playFrench(text, 0.85);
-    } else {
-      // Browser SpeechSynthesis for English if available
-      try {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const u = new SpeechSynthesisUtterance(text);
-          u.lang = 'en-US';
-          window.speechSynthesis.speak(u);
-        }
-      } catch {}
-    }
+    // Native context decides which installed voice reads the text
+    audioEngine.play(text, lang, 0.85);
   };
 
   const handleToggleStar = (id: string, e: React.MouseEvent) => {

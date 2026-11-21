@@ -1,6 +1,11 @@
 export interface AIResponse {
+  /** Target-language text. Legacy name kept so existing call sites still work. */
   frenchText: string;
+  /** Native-language translation. Legacy name kept for compatibility. */
   englishTranslation: string;
+  /** Language-neutral aliases for new code. */
+  targetText?: string;
+  nativeText?: string;
   formality: 'formal' | 'informal' | 'neutral';
   explanation?: string;
   reusableSlot?: string;
