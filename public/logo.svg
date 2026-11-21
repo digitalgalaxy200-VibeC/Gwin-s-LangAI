@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Dark Tech Canvas Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d"/>
+      <stop offset="45%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#030712"/>
+    </linearGradient>
+
+    <!-- Main Polyglot 'P' Gradient (Indigo to Sky Cyan) -->
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="40%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+
+    <!-- Golden Acoustic Resonance Gradient -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde047"/>
+      <stop offset="50%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#4338ca" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Solid Background with Rounded App Squircle -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  
+  <!-- Subtle Outer Accent Ring -->
+  <rect x="6" y="6" width="500" height="500" rx="106" fill="none" stroke="#6366f1" stroke-width="2" stroke-opacity="0.25"/>
+
+  <!-- Background Ambient Glow -->
+  <circle cx="256" cy="256" r="130" fill="#4f46e5" opacity="0.18" filter="url(#glow)"/>
+
+  <!-- Emblem Group -->
+  <g id="logo-mark" filter="url(#softShadow)">
+    
+    <!-- Outer Sonic Arc: Representing Global Spoken Reflex (CIA frequency pattern) -->
+    <path d="M 330 145 C 385 175, 420 230, 420 295 C 420 375, 360 440, 275 450" 
+          fill="none" 
+          stroke="url(#primaryGrad)" 
+          stroke-width="14" 
+          stroke-linecap="round" 
+          stroke-dasharray="1 18" 
+          opacity="0.45"/>
+
+    <path d="M 315 170 C 358 196, 385 240, 385 292 C 385 352, 340 405, 275 418" 
+          fill="none" 
+          stroke="url(#primaryGrad)" 
+          stroke-width="10" 
+          stroke-linecap="round" 
+          opacity="0.6"/>
+
+    <!-- The Geometric Modern 'P' Spine -->
+    <path d="M 160 120 
+             C 172 120, 182 130, 182 142 
+             L 182 390 
+             C 182 402, 172 412, 160 412 
+             C 148 412, 138 402, 138 390 
+             L 138 142 
+             C 138 130, 148 120, 160 120 Z" 
+          fill="url(#primaryGrad)"/>
+
+    <!-- The Infinite Polyglot Loop Head (Folded Ribbon) -->
+    <path d="M 160 120 
+             L 270 120 
+             C 340 120, 380 160, 380 220 
+             C 380 280, 340 318, 270 318 
+             L 182 318 
+             L 182 274 
+             L 268 274 
+             C 314 274, 336 250, 336 220 
+             C 336 190, 314 164, 268 164 
+             L 160 164 Z" 
+          fill="url(#primaryGrad)"/>
+
+    <!-- High-Frequency Acoustic Ripple (3 Sound Waves bursting from the core) -->
+    <path d="M 230 200 C 245 208, 245 230, 230 238" 
+          fill="none" 
+          stroke="#ffffff" 
+          stroke-width="8" 
+          stroke-linecap="round" 
+          opacity="0.9"/>
+
+    <path d="M 252 186 C 278 200, 278 238, 252 252" 
+          fill="none" 
+          stroke="#ffffff" 
+          stroke-width="7" 
+          stroke-linecap="round" 
+          opacity="0.75"/>
+
+    <path d="M 276 172 C 310 192, 310 246, 276 266" 
+          fill="none" 
+          stroke="url(#goldGrad)" 
+          stroke-width="7" 
+          stroke-linecap="round"/>
+
+    <!-- Dynamic 4-Point Polyglot Intelligence Sparkle (Upper Right) -->
+    <path d="M 370 115 
+             Q 370 145, 400 145 
+             Q 370 145, 370 175 
+             Q 370 145, 340 145 
+             Q 370 145, 370 115 Z" 
+          fill="url(#goldGrad)" 
+          filter="url(#glow)"/>
+
+    <!-- Secondary Micro Sparkle -->
+    <path d="M 130 100 
+             Q 130 112, 142 112 
+             Q 130 112, 130 124 
+             Q 130 112, 118 112 
+             Q 130 112, 130 100 Z" 
+          fill="#38bdf8" 
+          opacity="0.8"/>
+  </g>
+</svg>

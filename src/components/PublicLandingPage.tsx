@@ -301,9 +301,11 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           
           {/* Logo & Protocol Title */}
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-indigo-500/25">
-              {lang === 'fr' ? '🇫🇷' : '🇬🇧'}
-            </div>
+            <img 
+              src="/logo.svg" 
+              alt="Polyglot Logo" 
+              className="w-11 h-11 rounded-2xl shadow-lg shadow-indigo-500/25 object-contain"
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">{cur.appTitle}</span>
