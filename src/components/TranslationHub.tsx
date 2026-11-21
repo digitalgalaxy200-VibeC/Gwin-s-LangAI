@@ -78,7 +78,18 @@ export const TranslationHub: React.FC = () => {
       }
     }
 
-    // 3. Fallback when not indexed and no AI
+    // 3. Machine translation over HTTPS — works without an API key
+    setIsLoading(true);
+    const onlineRes = await offlineTranslationService.translateOnline(text, sourceLang);
+    setIsLoading(false);
+    if (onlineRes) {
+      setCurrentResult(onlineRes);
+      const saved = offlineTranslationService.addToHistory(onlineRes);
+      setHistory(prev => [saved, ...prev.filter(x => x.sourceText.toLowerCase() !== onlineRes.sourceText.toLowerCase())].slice(0, 50));
+      return;
+    }
+
+    // 4. Nothing worked — show the dictionary's not-found message
     setCurrentResult(offlineRes);
     const saved = offlineTranslationService.addToHistory(offlineRes);
     setHistory(prev => [saved, ...prev.filter(x => x.sourceText.toLowerCase() !== offlineRes.sourceText.toLowerCase())].slice(0, 50));

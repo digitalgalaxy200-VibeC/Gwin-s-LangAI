@@ -5,6 +5,7 @@
 // ============================================================
 
 import { FRENCH_QUICK_GLOSSARY } from './wordLookup';
+import { sharedContentCache } from './sharedContentCache';
 
 export interface TranslationResult {
   sourceText: string;
@@ -17,7 +18,7 @@ export interface TranslationResult {
   exampleFr?: string;
   exampleEn?: string;
   notes?: string;
-  matchType: 'exact_dictionary' | 'pattern' | 'smart_token' | 'ai_fallback';
+  matchType: 'exact_dictionary' | 'pattern' | 'smart_token' | 'ai_fallback' | 'online_api';
 }
 
 export interface TranslationHistoryItem extends TranslationResult {
@@ -316,48 +317,9 @@ export const offlineTranslationService = {
       }
     }
 
-    // 2. Multi-word phrase or partial containment match
-    if (sourceLang === 'en') {
-      const partial = OFFLINE_LEXICON.find(e =>
-        e.en.some(alias => norm.includes(normalize(alias)) || normalize(alias).includes(norm))
-      );
-      if (partial) {
-        return {
-          sourceText: cleanQuery,
-          translatedText: partial.fr,
-          sourceLang: 'en',
-          targetLang: 'fr',
-          phonetic: partial.phonetic,
-          partOfSpeech: partial.pos,
-          gender: partial.gender,
-          exampleFr: partial.exampleFr,
-          exampleEn: partial.exampleEn,
-          notes: `Closest match for "${cleanQuery}"`,
-          matchType: 'smart_token',
-        };
-      }
-    } else {
-      const partial = OFFLINE_LEXICON.find(e =>
-        norm.includes(normalize(e.fr)) || normalize(e.fr).includes(norm)
-      );
-      if (partial) {
-        return {
-          sourceText: cleanQuery,
-          translatedText: partial.en[0],
-          sourceLang: 'fr',
-          targetLang: 'en',
-          phonetic: partial.phonetic,
-          partOfSpeech: partial.pos,
-          gender: partial.gender,
-          exampleFr: partial.exampleFr,
-          exampleEn: partial.exampleEn,
-          notes: `Correspondance la plus proche pour "${cleanQuery}"`,
-          matchType: 'smart_token',
-        };
-      }
-    }
-
-    // 3. Check FRENCH_QUICK_GLOSSARY database
+    // 2. Exact glossary (phrasebook) entry. Only whole phrases match here:
+    // substring matching used to hijack sentences and answer with a single
+    // unrelated word, which is why multi-word input produced nonsense.
     if (sourceLang === 'fr') {
       const gEntry = FRENCH_QUICK_GLOSSARY[norm];
       if (gEntry) {
@@ -373,24 +335,25 @@ export const offlineTranslationService = {
         };
       }
     } else {
-      // Find in FRENCH_QUICK_GLOSSARY by english translation text
-      for (const [frKey, gEntry] of Object.entries(FRENCH_QUICK_GLOSSARY)) {
-        if (normalize(gEntry.translation).includes(norm) || norm.includes(normalize(gEntry.translation))) {
-          return {
-            sourceText: cleanQuery,
-            translatedText: frKey,
-            sourceLang: 'en',
-            targetLang: 'fr',
-            phonetic: gEntry.phonetic,
-            partOfSpeech: gEntry.partOfSpeech,
-            gender: gEntry.gender,
-            matchType: 'exact_dictionary',
-          };
-        }
+      const gMatch = Object.entries(FRENCH_QUICK_GLOSSARY).find(
+        ([, gEntry]) => normalize(gEntry.translation) === norm
+      );
+      if (gMatch) {
+        const [frKey, gEntry] = gMatch;
+        return {
+          sourceText: cleanQuery,
+          translatedText: frKey,
+          sourceLang: 'en',
+          targetLang: 'fr',
+          phonetic: gEntry.phonetic,
+          partOfSpeech: gEntry.partOfSpeech,
+          gender: gEntry.gender,
+          matchType: 'exact_dictionary',
+        };
       }
     }
 
-    // 4. Fallback when not found offline
+    // 3. Fallback when not found offline
     return {
       sourceText: cleanQuery,
       translatedText: sourceLang === 'en'
@@ -403,6 +366,54 @@ export const offlineTranslationService = {
         : 'Tip: try a simpler word or enable AI in Profile.',
       matchType: 'pattern',
     };
+  },
+
+  /**
+   * Machine translation for full sentences, used only when the offline
+   * dictionary has no exact entry. Results are cached like AI output.
+   */
+  async translateOnline(input: string, sourceLang: 'en' | 'fr'): Promise<TranslationResult | null> {
+    const query = input.trim();
+    const targetLang = sourceLang === 'en' ? 'fr' : 'en';
+    if (!query) return null;
+
+    const cacheKey = `${query.toLowerCase()}::${sourceLang}->${targetLang}`;
+    const cached = sharedContentCache.get(cacheKey, sourceLang, targetLang, 'translation');
+    if (cached) {
+      try {
+        return { ...(JSON.parse(cached) as TranslationResult), matchType: 'online_api' };
+      } catch {
+        // Corrupted entry — fall through to the network
+      }
+    }
+
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(query)}&langpair=${sourceLang}|${targetLang}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+
+      const json = await res.json();
+      const translated =
+        typeof json?.responseData?.translatedText === 'string'
+          ? json.responseData.translatedText.trim()
+          : '';
+
+      if (!translated || /^MYMEMORY WARNING/i.test(translated)) return null;
+
+      const result: TranslationResult = {
+        sourceText: query,
+        translatedText: translated,
+        sourceLang,
+        targetLang,
+        notes: 'Machine translation — verify before relying on it.',
+        matchType: 'online_api',
+      };
+
+      sharedContentCache.set(cacheKey, sourceLang, targetLang, 'translation', JSON.stringify(result), 1440);
+      return result;
+    } catch {
+      return null;
+    }
   },
 
   // ── History management ───────────────────────────────────────
