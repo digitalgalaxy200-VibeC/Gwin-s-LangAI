@@ -20,6 +20,7 @@ import {
 interface PublicLandingPageProps {
   onGetStarted: () => void;
   onSignIn: () => void;
+  onContinueAsGuest: () => void;
 }
 
 type Lang = 'en' | 'fr';
@@ -27,6 +28,7 @@ type Lang = 'en' | 'fr';
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onGetStarted,
   onSignIn,
+  onContinueAsGuest,
 }) => {
   const [lang, setLang] = useState<Lang>('en');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -48,23 +50,25 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   // Translations Dictionary for Complete Bilingual Landing Page
   const t = {
     en: {
-      topBannerTag: "New Protocol",
-      topBannerText: "Operational Spoken French & English: Learn the top 300 high-frequency reflexes in 14 days.",
+      topBannerTag: "Battle-Tested Methodology",
+      topBannerText: "How elite diplomatic & intelligence operatives master foreign spoken fluency in under 3 weeks.",
       appTitle: "Polyglot",
-      ciaBadge: "CIA Pattern",
-      appSubtitle: "Military-Grade Spoken Fluency • 100% Offline",
+      ciaBadge: "Operative Pattern",
+      appSubtitle: "Tactical Spoken Fluency • 100% Offline Autonomy",
       loginBtn: "Learner Login",
       getStartedBtn: "Get Started",
-      heroBadge: "The High-Frequency Diplomatic & CIA Training Pattern",
-      heroTitle1: "Speak Fluent French in ",
+      guestBtn: "Explore as Guest",
+      heroBadge: "The High-Speed Diplomatic & Field Operative Protocol",
+      heroTitle1: "Speak Conversational French in ",
       heroDays: "14 Days",
-      heroTitle2: "Not 4 Years.",
-      heroDesc: "Traditional classes teach grammar tables that make you freeze in conversation. We use the CIA / Foreign Service training pattern: drill the top 20% high-frequency phrase matrices with rapid auditory reflex until you speak instinctively—with 100% offline autonomy.",
+      heroTitle2: "Using the Secret Foreign Service Reflex Method.",
+      heroDesc: "Diplomatic corps and intelligence agencies never sit through 4 years of classroom grammar. They train the top 20% high-frequency vocal frames with rapid auditory reflex until speaking becomes an instinct. No internet required.",
       check1: "100% Zero-Data Offline First",
       check2: "No Grammar Conjugation Tables",
       check3: "Native Audio Every Single Word",
       ctaPrimary: "Start 14-Day Protocol",
       ctaSecondary: "Sign In to Your Workspace",
+      ctaGuest: "Try Without Registering (Guest Mode)",
       heroNote: "Instant on-device setup • No credit card required • Zero internet connection needed",
       
       problemTag: "The Fatal Flaw of Traditional Learning",
@@ -164,23 +168,25 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       footerAdmin: "Super Admin Portal"
     },
     fr: {
-      topBannerTag: "Nouveau Protocole",
-      topBannerText: "Français & Anglais Parlé Opérationnel : Maîtrisez les 300 réflexes à haute fréquence en 14 jours.",
+      topBannerTag: "Méthode Éprouvée",
+      topBannerText: "La stratégie utilisée par les diplomates d'élite pour maîtriser une langue étrangère en moins de 3 semaines.",
       appTitle: "Polyglot",
-      ciaBadge: "Méthode CIA",
-      appSubtitle: "Aisance Orale de Précision • 100% Hors-Ligne",
+      ciaBadge: "Méthode Opérationnelle",
+      appSubtitle: "Aisance Orale Tactique • 100% Autonome Hors-Ligne",
       loginBtn: "Connexion",
       getStartedBtn: "Commencer",
-      heroBadge: "Le Cadre d'Entraînement Diplomatique & Haute Fréquence (Méthode CIA)",
+      guestBtn: "Essayer en Invité",
+      heroBadge: "Le Protocole Rapide des Services Diplomatiques & Opérationnels",
       heroTitle1: "Parlez Français Couramment en ",
       heroDays: "14 Jours",
-      heroTitle2: "Pas en 4 Ans.",
-      heroDesc: "Les cours traditionnels vous noient sous des tableaux de grammaire qui vous bloquent en conversation. Nous utilisons le protocole des services diplomatiques / CIA : travaillez les 20% de matrices de phrases les plus fréquentes avec un réflexe auditif immédiat—100% hors-ligne.",
+      heroTitle2: "Grâce à la Méthode Réflexe des Services Secrets.",
+      heroDesc: "Les diplomates et agents de terrain n'étudient pas 4 ans de grammaire en classe. Ils entraînent les 20% de matrices vocales les plus fréquentes avec un réflexe auditif immédiat jusqu'à ce que la parole devienne un réflexe naturel. Sans aucune connexion internet.",
       check1: "100% Autonome Hors-Ligne (Sans Données)",
       check2: "Zéro Tableaux de Conjugaison Rébarbatifs",
       check3: "Audio Natif sur Chaque Mot et Phrase",
       ctaPrimary: "Lancer le Protocole 14 Jours",
       ctaSecondary: "Accéder à Mon Espace",
+      ctaGuest: "Découvrir Sans Inscription (Mode Invité)",
       heroNote: "Configuration immédiate • Aucune carte bancaire requise • Aucune connexion internet nécessaire",
       
       problemTag: "Le Défaut Fatal de la Méthode Traditionnelle",
@@ -348,6 +354,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             </div>
 
             <button
+              onClick={onContinueAsGuest}
+              className="px-3.5 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-semibold text-xs sm:text-sm transition-all"
+            >
+              {cur.guestBtn}
+            </button>
+            <button
               onClick={onSignIn}
               className="px-3.5 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-semibold text-xs sm:text-sm transition-all"
             >
@@ -403,7 +415,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           </div>
 
           {/* Call to Actions */}
-          <div className="pt-4 flex flex-col sm:flex-row gap-3.5 justify-center max-w-md mx-auto">
+          <div className="pt-4 flex flex-col sm:flex-row gap-3.5 justify-center max-w-lg mx-auto">
             <button
               onClick={onGetStarted}
               className="w-full py-4 px-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-2xl font-black text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
@@ -416,6 +428,15 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               className="w-full py-4 px-6 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-2xl font-bold text-sm transition-all active:scale-95"
             >
               {cur.ctaSecondary}
+            </button>
+          </div>
+
+          <div className="pt-1">
+            <button
+              onClick={onContinueAsGuest}
+              className="text-xs text-indigo-300 hover:text-white font-bold underline underline-offset-4 transition-colors cursor-pointer"
+            >
+              {cur.ctaGuest} ➔
             </button>
           </div>
           

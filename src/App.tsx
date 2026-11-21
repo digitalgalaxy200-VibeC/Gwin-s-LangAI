@@ -89,6 +89,23 @@ export default function App() {
             setAuthInitialMode('login');
             setIsAuthOpen(true);
           }}
+          onContinueAsGuest={() => {
+            // Initialize local guest learner profile so user can immediately experience the app
+            const guestProfile: UserProfile = {
+              id: 'usr_guest_' + Date.now().toString(36),
+              name: 'Guest Learner',
+              nativeLanguage: 'en',
+              targetLanguage: 'fr',
+              cefrLevel: 'A1',
+              dailyGoalMinutes: 15,
+              learningReason: 'travel',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              syncStatus: 'local',
+            };
+            setProfile(guestProfile);
+            setShowLanding(false);
+          }}
         />
 
         <AuthModal

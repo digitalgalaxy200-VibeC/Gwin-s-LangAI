@@ -180,6 +180,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, initialAdminOpen 
       {/* Main Content Area */}
       <main className="flex-1 px-4 py-5 space-y-5">
 
+        {/* Guest Warning / Call to Register to Save Progress */}
+        {!currentUser && (
+          <div className="bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-indigo-500/10 border border-amber-500/30 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900">You are browsing in Guest Mode</h4>
+                <p className="text-[11px] text-slate-600 leading-tight mt-0.5">
+                  Kindly register your free account to sync your streaks and preserve your progress to the cloud.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-xs rounded-xl shadow-sm shrink-0 transition-all"
+            >
+              Save Progress
+            </button>
+          </div>
+        )}
+
         {/* ── Structured Program tab ── */}
         {activeTab === 'program' && (
           <div className="space-y-4">
