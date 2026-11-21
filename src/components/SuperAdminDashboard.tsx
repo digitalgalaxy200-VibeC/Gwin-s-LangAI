@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tursoService } from '../services/tursoService';
+import { emailService, type SmtpConfig } from '../services/emailService';
 import { 
   ShieldCheck, 
   Users, 
@@ -11,7 +12,8 @@ import {
   Database, 
   CheckCircle2, 
   AlertCircle,
-  X
+  X,
+  Mail
 } from 'lucide-react';
 
 interface SuperAdminDashboardProps {
@@ -28,6 +30,13 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
   const [dbUrl, setDbUrl] = useState('');
   const [authToken, setAuthToken] = useState('');
   const [configSuccess, setConfigSuccess] = useState('');
+
+  // SMTP Email verification config
+  const [emailProvider, setEmailProvider] = useState<'resend' | 'brevo'>('resend');
+  const [emailApiKey, setEmailApiKey] = useState('');
+  const [senderEmail, setSenderEmail] = useState('');
+  const [senderName, setSenderName] = useState('French AI Tutor');
+  const [emailSuccess, setEmailSuccess] = useState('');
 
   // Stats state
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +66,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
     if (existing) {
       setDbUrl(existing.databaseUrl);
       setAuthToken(existing.authToken);
+    }
+
+    const emailCfg = emailService.loadConfig();
+    if (emailCfg) {
+      setEmailProvider(emailCfg.provider === 'brevo' ? 'brevo' : 'resend');
+      setEmailApiKey(emailCfg.apiKey);
+      setSenderEmail(emailCfg.senderEmail);
+      setSenderName(emailCfg.senderName || 'French AI Tutor');
     }
   }, [isOpen]);
 
@@ -89,6 +106,20 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
     } else {
       setConfigSuccess('Connection failed. Please check the URL and Auth Token.');
     }
+  };
+
+  const handleSaveEmailConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailApiKey.trim() || !senderEmail.trim()) return;
+    const cfg: SmtpConfig = {
+      provider: emailProvider,
+      apiKey: emailApiKey.trim(),
+      senderEmail: senderEmail.trim(),
+      senderName: senderName.trim() || 'French AI Tutor',
+    };
+    emailService.saveConfig(cfg);
+    setEmailSuccess('SMTP verification service saved and activated!');
+    setTimeout(() => setEmailSuccess(''), 4000);
   };
 
   if (!isOpen) return null;
@@ -211,6 +242,90 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
                 {configSuccess && (
                   <div className="text-xs text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 p-2.5 rounded-xl">
                     {configSuccess}
+                  </div>
+                )}
+              </form>
+            </div>
+
+            {/* SMTP Email Verification Settings Box */}
+            <div className="bg-slate-50 border border-slate-200/90 rounded-3xl p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-indigo-600" />
+                  <span>SMTP / Email Verification Settings</span>
+                </span>
+                {emailService.isConfigured() ? (
+                  <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Email Active
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full">
+                    Simulation Mode
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Connect your Resend or Brevo API key. When your siblings or students register, a 6-digit confirmation code will be dispatched to their inbox automatically.
+              </p>
+
+              <form onSubmit={handleSaveEmailConfig} className="space-y-2.5 pt-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEmailProvider('resend')}
+                    className={`py-2 rounded-xl text-xs font-bold border text-center transition-all ${
+                      emailProvider === 'resend' ? 'border-indigo-600 bg-indigo-50 font-black text-indigo-900' : 'border-slate-200 bg-white text-slate-600'
+                    }`}
+                  >
+                    Resend (Recommended)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailProvider('brevo')}
+                    className={`py-2 rounded-xl text-xs font-bold border text-center transition-all ${
+                      emailProvider === 'brevo' ? 'border-indigo-600 bg-indigo-50 font-black text-indigo-900' : 'border-slate-200 bg-white text-slate-600'
+                    }`}
+                  >
+                    Brevo (Sendinblue)
+                  </button>
+                </div>
+
+                <input
+                  type="password"
+                  value={emailApiKey}
+                  onChange={(e) => setEmailApiKey(e.target.value)}
+                  placeholder={emailProvider === 'resend' ? "Resend API Key (re_...)" : "Brevo API Key (xkeysib-...)"}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="email"
+                    value={senderEmail}
+                    onChange={(e) => setSenderEmail(e.target.value)}
+                    placeholder="Sender email (e.g. tutor@yourdomain.com)"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  />
+                  <input
+                    type="text"
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value)}
+                    placeholder="Sender Display Name"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>Save Email Verification Service</span>
+                </button>
+
+                {emailSuccess && (
+                  <div className="text-xs text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 p-2.5 rounded-xl">
+                    {emailSuccess}
                   </div>
                 )}
               </form>
