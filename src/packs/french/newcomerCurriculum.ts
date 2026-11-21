@@ -1,0 +1,446 @@
+import type { VocabularyItem } from '../../types/curriculum';
+
+export interface BeginnerGroup {
+  groupId: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  category: 'identity' | 'survival' | 'navigation' | 'needs' | 'social';
+  words: VocabularyItem[];
+  survivalDialogues: {
+    prompt: string;
+    french: string;
+    english: string;
+    usedWords: string[];
+  }[];
+}
+
+export const NEWCOMER_SURVIVAL_100: VocabularyItem[] = [
+  // --- GROUP 1: Identity & Self (Who I am & Who you are) ---
+  {
+    id: 'nc_je',
+    word: 'je',
+    translation: 'I',
+    partOfSpeech: 'pronoun',
+    phonetic: 'ʒə',
+    exampleSentenceFr: 'Je suis nouveau ici.',
+    exampleSentenceEn: 'I am new here.',
+    frequencyRank: 1,
+    cefrLevel: 'A1',
+    category: 'identity',
+  },
+  {
+    id: 'nc_suis',
+    word: 'suis',
+    translation: 'am (from "être")',
+    partOfSpeech: 'verb',
+    phonetic: 'sɥi',
+    exampleSentenceFr: 'Je suis étranger.',
+    exampleSentenceEn: 'I am a foreigner / from abroad.',
+    frequencyRank: 2,
+    cefrLevel: 'A1',
+    category: 'identity',
+  },
+  {
+    id: 'nc_vous',
+    word: 'vous',
+    translation: 'you (polite / formal)',
+    partOfSpeech: 'pronoun',
+    phonetic: 'vu',
+    exampleSentenceFr: 'Et vous, comment vous vous appelez ?',
+    exampleSentenceEn: 'And you, what is your name?',
+    frequencyRank: 3,
+    cefrLevel: 'A1',
+    category: 'identity',
+  },
+  {
+    id: 'nc_etes',
+    word: 'êtes',
+    translation: 'are (from "être")',
+    partOfSpeech: 'verb',
+    phonetic: 'ɛt',
+    exampleSentenceFr: 'Vous êtes le responsable ?',
+    exampleSentenceEn: 'Are you the manager / person in charge?',
+    frequencyRank: 4,
+    cefrLevel: 'A1',
+    category: 'identity',
+  },
+  {
+    id: 'nc_appelle',
+    word: 'm’appelle',
+    translation: 'my name is (call myself)',
+    partOfSpeech: 'verb',
+    phonetic: 'ma.pɛl',
+    exampleSentenceFr: 'Je m’appelle David.',
+    exampleSentenceEn: 'My name is David.',
+    frequencyRank: 5,
+    cefrLevel: 'A1',
+    category: 'identity',
+  },
+
+  // --- GROUP 2: The Magic Politeness Words (Never speak without these in France) ---
+  {
+    id: 'nc_bonjour',
+    word: 'bonjour',
+    translation: 'hello / good morning',
+    partOfSpeech: 'expression',
+    phonetic: 'bɔ̃.ʒuʁ',
+    exampleSentenceFr: 'Bonjour madame, excusez-moi.',
+    exampleSentenceEn: 'Hello ma’am, excuse me.',
+    frequencyRank: 6,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_silvousplait',
+    word: 's’il vous plaît',
+    translation: 'please',
+    partOfSpeech: 'expression',
+    phonetic: 'sil vu plɛ',
+    exampleSentenceFr: 'Aidez-moi, s’il vous plaît.',
+    exampleSentenceEn: 'Help me, please.',
+    frequencyRank: 7,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_merci',
+    word: 'merci',
+    translation: 'thank you',
+    partOfSpeech: 'expression',
+    phonetic: 'mɛʁ.si',
+    exampleSentenceFr: 'Merci beaucoup pour votre aide.',
+    exampleSentenceEn: 'Thank you very much for your help.',
+    frequencyRank: 8,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_pardon',
+    word: 'pardon',
+    translation: 'sorry / pardon me',
+    partOfSpeech: 'expression',
+    phonetic: 'paʁ.dɔ̃',
+    exampleSentenceFr: 'Pardon, je ne parle pas bien français.',
+    exampleSentenceEn: 'Sorry, I don’t speak French well.',
+    frequencyRank: 9,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_aurevoir',
+    word: 'au revoir',
+    translation: 'goodbye',
+    partOfSpeech: 'expression',
+    phonetic: 'o ʁə.vwaʁ',
+    exampleSentenceFr: 'Merci et au revoir !',
+    exampleSentenceEn: 'Thank you and goodbye!',
+    frequencyRank: 10,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+
+  // --- GROUP 3: Immediate Survival Communication (Language Barrier) ---
+  {
+    id: 'nc_parle',
+    word: 'parle',
+    translation: 'speak (from "parler")',
+    partOfSpeech: 'verb',
+    phonetic: 'paʁl',
+    exampleSentenceFr: 'Je parle un peu français.',
+    exampleSentenceEn: 'I speak a little French.',
+    frequencyRank: 11,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_anglais',
+    word: 'anglais',
+    translation: 'English',
+    partOfSpeech: 'noun',
+    gender: 'm',
+    phonetic: 'ɑ̃.ɡlɛ',
+    exampleSentenceFr: 'Parlez-vous anglais ?',
+    exampleSentenceEn: 'Do you speak English?',
+    frequencyRank: 12,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_comprends',
+    word: 'comprends',
+    translation: 'understand (from "comprendre")',
+    partOfSpeech: 'verb',
+    phonetic: 'kɔ̃.pʁɑ̃',
+    exampleSentenceFr: 'Je ne comprends pas.',
+    exampleSentenceEn: 'I do not understand.',
+    frequencyRank: 13,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_lentement',
+    word: 'lentement',
+    translation: 'slowly',
+    partOfSpeech: 'adverb',
+    phonetic: 'lɑ̃t.mɑ̃',
+    exampleSentenceFr: 'Parlez plus lentement, s’il vous plaît.',
+    exampleSentenceEn: 'Speak more slowly, please.',
+    frequencyRank: 14,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+  {
+    id: 'nc_repeter',
+    word: 'répéter',
+    translation: 'to repeat',
+    partOfSpeech: 'verb',
+    phonetic: 'ʁe.pe.te',
+    exampleSentenceFr: 'Pouvez-vous répéter ?',
+    exampleSentenceEn: 'Can you repeat?',
+    frequencyRank: 15,
+    cefrLevel: 'A1',
+    category: 'survival',
+  },
+
+  // --- GROUP 4: Finding Your Way & Orientation ---
+  {
+    id: 'nc_ou',
+    word: 'où',
+    translation: 'where',
+    partOfSpeech: 'adverb',
+    phonetic: 'u',
+    exampleSentenceFr: 'Où sont les toilettes ?',
+    exampleSentenceEn: 'Where are the restrooms?',
+    frequencyRank: 16,
+    cefrLevel: 'A1',
+    category: 'navigation',
+  },
+  {
+    id: 'nc_est',
+    word: 'est',
+    translation: 'is (from "être")',
+    partOfSpeech: 'verb',
+    phonetic: 'ɛ',
+    exampleSentenceFr: 'Où est la gare ?',
+    exampleSentenceEn: 'Where is the train station?',
+    frequencyRank: 17,
+    cefrLevel: 'A1',
+    category: 'navigation',
+  },
+  {
+    id: 'nc_ici',
+    word: 'ici',
+    translation: 'here',
+    partOfSpeech: 'adverb',
+    phonetic: 'i.si',
+    exampleSentenceFr: 'Je suis ici pour le travail.',
+    exampleSentenceEn: 'I am here for work.',
+    frequencyRank: 18,
+    cefrLevel: 'A1',
+    category: 'navigation',
+  },
+  {
+    id: 'nc_hotel',
+    word: 'hôtel',
+    translation: 'hotel',
+    partOfSpeech: 'noun',
+    gender: 'm',
+    phonetic: 'o.tɛl',
+    exampleSentenceFr: 'Mon hôtel est près d’ici.',
+    exampleSentenceEn: 'My hotel is near here.',
+    frequencyRank: 19,
+    cefrLevel: 'A1',
+    category: 'navigation',
+  },
+  {
+    id: 'nc_taxi',
+    word: 'taxi',
+    translation: 'taxi / cab',
+    partOfSpeech: 'noun',
+    gender: 'm',
+    phonetic: 'tak.si',
+    exampleSentenceFr: 'Où puis-je trouver un taxi ?',
+    exampleSentenceEn: 'Where can I find a taxi?',
+    frequencyRank: 20,
+    cefrLevel: 'A1',
+    category: 'navigation',
+  },
+
+  // --- GROUP 5: Expressing Core Needs & Desires ---
+  {
+    id: 'nc_voudrais',
+    word: 'je voudrais',
+    translation: 'I would like',
+    partOfSpeech: 'expression',
+    phonetic: 'ʒə vu.dʁɛ',
+    exampleSentenceFr: 'Je voudrais de l’eau.',
+    exampleSentenceEn: 'I would like some water.',
+    frequencyRank: 21,
+    cefrLevel: 'A1',
+    category: 'needs',
+  },
+  {
+    id: 'nc_besoin',
+    word: 'besoin',
+    translation: 'need',
+    partOfSpeech: 'noun',
+    gender: 'm',
+    phonetic: 'bə.zwɛ̃',
+    exampleSentenceFr: 'J’ai besoin d’aide.',
+    exampleSentenceEn: 'I need help.',
+    frequencyRank: 22,
+    cefrLevel: 'A1',
+    category: 'needs',
+  },
+  {
+    id: 'nc_eau',
+    word: 'eau',
+    translation: 'water',
+    partOfSpeech: 'noun',
+    gender: 'f',
+    phonetic: 'o',
+    exampleSentenceFr: 'Un verre d’eau, s’il vous plaît.',
+    exampleSentenceEn: 'A glass of water, please.',
+    frequencyRank: 23,
+    cefrLevel: 'A1',
+    category: 'needs',
+  },
+  {
+    id: 'nc_combien',
+    word: 'combien',
+    translation: 'how much',
+    partOfSpeech: 'adverb',
+    phonetic: 'kɔ̃.bjɛ̃',
+    exampleSentenceFr: 'C’est combien ?',
+    exampleSentenceEn: 'How much is it?',
+    frequencyRank: 24,
+    cefrLevel: 'A1',
+    category: 'needs',
+  },
+  {
+    id: 'nc_payer',
+    word: 'payer',
+    translation: 'to pay',
+    partOfSpeech: 'verb',
+    phonetic: 'pe.je',
+    exampleSentenceFr: 'Puis-je payer par carte ?',
+    exampleSentenceEn: 'Can I pay by card?',
+    frequencyRank: 25,
+    cefrLevel: 'A1',
+    category: 'needs',
+  }
+];
+
+export const NEWCOMER_SURVIVAL_GROUPS: BeginnerGroup[] = [
+  {
+    groupId: 'grp_identity',
+    title: '1. Identity & Self ("I am", "You are")',
+    subtitle: 'Introduce who you are immediately upon landing',
+    icon: '👤',
+    category: 'identity',
+    words: NEWCOMER_SURVIVAL_100.slice(0, 5),
+    survivalDialogues: [
+      {
+        prompt: 'First words at immigration or hotel desk:',
+        french: 'Bonjour, je m’appelle David, je suis étranger et je suis ici pour le travail.',
+        english: 'Hello, my name is David, I am from abroad and I am here for work.',
+        usedWords: ['je', 'suis', 'm’appelle', 'bonjour'],
+      },
+      {
+        prompt: 'Asking who you are speaking to:',
+        french: 'Excusez-moi, vous êtes le responsable de l’hôtel ?',
+        english: 'Excuse me, are you the hotel manager?',
+        usedWords: ['vous', 'êtes'],
+      }
+    ]
+  },
+  {
+    groupId: 'grp_politeness',
+    title: '2. The Politeness Shield',
+    subtitle: 'Crucial words you must say before asking anything in France',
+    icon: '🙏',
+    category: 'survival',
+    words: NEWCOMER_SURVIVAL_100.slice(5, 10),
+    survivalDialogues: [
+      {
+        prompt: 'Getting someone’s attention politely on the street:',
+        french: 'Bonjour monsieur, pardon, pouvez-vous m’aider s’il vous plaît ?',
+        english: 'Hello sir, excuse me, can you help me please?',
+        usedWords: ['bonjour', 'pardon', 's’il vous plaît'],
+      },
+      {
+        prompt: 'Ending an interaction respectfully:',
+        french: 'Merci beaucoup pour tout, bonne journée et au revoir !',
+        english: 'Thank you very much for everything, have a good day and goodbye!',
+        usedWords: ['merci', 'au revoir'],
+      }
+    ]
+  },
+  {
+    groupId: 'grp_language_barrier',
+    title: '3. Handling the Language Barrier',
+    subtitle: 'What to say when someone speaks too fast or in difficult French',
+    icon: '🗣️',
+    category: 'survival',
+    words: NEWCOMER_SURVIVAL_100.slice(10, 15),
+    survivalDialogues: [
+      {
+        prompt: 'Admitting your level honestly:',
+        french: 'Pardon, je parle seulement un peu français et je ne comprends pas.',
+        english: 'Sorry, I only speak a little French and I do not understand.',
+        usedWords: ['pardon', 'parle', 'comprends'],
+      },
+      {
+        prompt: 'Asking them to slow down and switch or repeat:',
+        french: 'Pouvez-vous répéter plus lentement, s’il vous plaît ? Parlez-vous anglais ?',
+        english: 'Can you repeat more slowly, please? Do you speak English?',
+        usedWords: ['répéter', 'lentement', 's’il vous plaît', 'anglais'],
+      }
+    ]
+  },
+  {
+    groupId: 'grp_navigation',
+    title: '4. Finding Places & Getting a Ride',
+    subtitle: 'Airport, taxi, hotel, restrooms and train station',
+    icon: '📍',
+    category: 'navigation',
+    words: NEWCOMER_SURVIVAL_100.slice(15, 20),
+    survivalDialogues: [
+      {
+        prompt: 'Asking for directions to your stay:',
+        french: 'Pardon, où est cet hôtel s’il vous plaît ? C’est près d’ici ?',
+        english: 'Excuse me, where is this hotel please? Is it near here?',
+        usedWords: ['où', 'est', 'hôtel', 'ici'],
+      },
+      {
+        prompt: 'Getting transport:',
+        french: 'Bonjour, où est la station de taxi s’il vous plaît ?',
+        english: 'Hello, where is the taxi stand please?',
+        usedWords: ['bonjour', 'où', 'est', 'taxi'],
+      }
+    ]
+  },
+  {
+    groupId: 'grp_needs',
+    title: '5. Immediate Needs, Food & Paying',
+    subtitle: 'Water, food, asking the price and paying by card',
+    icon: '💳',
+    category: 'needs',
+    words: NEWCOMER_SURVIVAL_100.slice(20, 25),
+    survivalDialogues: [
+      {
+        prompt: 'Ordering water or essentials:',
+        french: 'Bonjour, je voudrais une bouteille d’eau s’il vous plaît.',
+        english: 'Hello, I would like a bottle of water please.',
+        usedWords: ['bonjour', 'je voudrais', 'eau', 's’il vous plaît'],
+      },
+      {
+        prompt: 'Asking the price and paying:',
+        french: 'C’est combien au total ? Est-ce que je peux payer par carte ?',
+        english: 'How much is it in total? Can I pay by card?',
+        usedWords: ['combien', 'payer'],
+      }
+    ]
+  }
+];

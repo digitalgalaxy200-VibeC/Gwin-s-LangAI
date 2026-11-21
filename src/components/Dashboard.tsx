@@ -6,6 +6,7 @@ import { LessonPlayer } from './LessonPlayer';
 import { AskAITutor } from './AskAITutor';
 import { RoleplayRoom } from './RoleplayRoom';
 import { HighFrequencySpeakingLab } from './HighFrequencySpeakingLab';
+import { NewcomerSurvivalGuide } from './NewcomerSurvivalGuide';
 import { ListenAndRepeat } from './ListenAndRepeat';
 import { syncService } from '../services/syncService';
 import { 
@@ -29,7 +30,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
-  const [activeTab, setActiveTab] = useState<'learn' | 'hf_speak' | 'ask' | 'practise' | 'listen' | 'settings'>('learn');
+  const [activeTab, setActiveTab] = useState<'learn' | 'hf_speak' | 'newcomer' | 'ask' | 'practise' | 'listen' | 'settings'>('newcomer');
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeScenario, setActiveScenario] = useState<{ title: string; context: string } | null>(null);
@@ -130,26 +131,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
 
       {/* Main Content Area */}
       <main className="flex-1 px-4 py-5 space-y-5">
+
+        {/* ── Learn-mode tab switcher (shown for all 3 learn sub-tabs) ── */}
+        {(activeTab === 'learn' || activeTab === 'newcomer' || activeTab === 'hf_speak') && (
+          <div className="bg-white rounded-2xl p-1.5 border border-slate-200/80 flex gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('newcomer')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'newcomer' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              🛬 Day 1 Arrival
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('hf_speak')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'hf_speak' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Top Frequency
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('learn')}
+              className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'learn' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Situations
+            </button>
+          </div>
+        )}
+
         {activeTab === 'learn' && (
           <>
-            {/* Quick Mode Switcher Banner */}
-            <div className="bg-white rounded-2xl p-1.5 border border-slate-200/80 flex gap-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab('learn')}
-                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-xs"
-              >
-                Situational Lessons
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('hf_speak')}
-                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900"
-              >
-                High-Frequency Speaking Lab
-              </button>
-            </div>
-
             {/* Featured Next Lesson Banner */}
             {lessons.length > 0 && (
               <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-5 text-white shadow-lg shadow-indigo-100">
@@ -207,26 +224,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
           </>
         )}
 
+        {activeTab === 'newcomer' && (
+          <NewcomerSurvivalGuide />
+        )}
+
         {activeTab === 'hf_speak' && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl p-1.5 border border-slate-200/80 flex gap-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab('learn')}
-                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-slate-900"
-              >
-                Situational Lessons
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('hf_speak')}
-                className="flex-1 py-2 rounded-xl text-xs font-bold transition-all bg-indigo-600 text-white shadow-xs"
-              >
-                High-Frequency Speaking Lab
-              </button>
-            </div>
-            <HighFrequencySpeakingLab />
-          </div>
+          <HighFrequencySpeakingLab />
         )}
 
         {activeTab === 'ask' && (
