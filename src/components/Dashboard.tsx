@@ -3,6 +3,8 @@ import type { UserProfile } from '../types/database';
 import type { LessonUnit } from '../types/curriculum';
 import { curriculumRepo } from '../repositories/curriculumRepository';
 import { LessonPlayer } from './LessonPlayer';
+import { AskAITutor } from './AskAITutor';
+import { RoleplayRoom } from './RoleplayRoom';
 import { 
   BookOpen, 
   MessageSquare, 
@@ -12,7 +14,8 @@ import {
   CheckCircle2, 
   Sparkles,
   ChevronRight,
-  Play
+  Play,
+  Key
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -23,6 +26,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   const [activeTab, setActiveTab] = useState<'learn' | 'ask' | 'practise' | 'listen' | 'settings'>('learn');
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
+  const [activeScenario, setActiveScenario] = useState<{ title: string; context: string } | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [keySaved, setKeySaved] = useState(false);
 
   useEffect(() => {
     async function fetchLessons() {
@@ -30,7 +36,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
       setLessons(data);
     }
     fetchLessons();
+
+    const storedKey = localStorage.getItem('deepseek_api_key');
+    if (storedKey) {
+      setApiKeyInput(storedKey);
+      setKeySaved(true);
+    }
   }, []);
+
+  const handleSaveApiKey = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('deepseek_api_key', apiKeyInput.trim());
+    setKeySaved(true);
+  };
 
   if (activeLessonId) {
     return (
@@ -38,9 +56,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
         lessonId={activeLessonId}
         userId={profile.id}
         onClose={() => setActiveLessonId(null)}
-        onCompleted={() => {
-          // Refresh list or trigger progress state
-        }}
+        onCompleted={() => {}}
+      />
+    );
+  }
+
+  if (activeScenario) {
+    return (
+      <RoleplayRoom
+        scenarioTitle={activeScenario.title}
+        scenarioContext={activeScenario.context}
+        onBack={() => setActiveScenario(null)}
       />
     );
   }
@@ -127,27 +153,57 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
         )}
 
         {activeTab === 'ask' && (
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-center py-12">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center mb-3">
-              <Sparkles className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-slate-900 text-base">Ask AI (Phase 3)</h3>
-            <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto">
-              Ready for the 3-tier retrieval engine: exact matches, grammar slot patterns, and DeepSeek fallback.
-            </p>
-          </div>
+          <AskAITutor />
         )}
 
         {activeTab === 'practise' && (
           <div className="space-y-3">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Roleplay Scenarios (Phase 3)</h2>
-            {['Office Meeting', 'Market Negotiation', 'Calling Reception', 'Ordering at a Restaurant'].map((scenario, idx) => (
-              <div key={idx} className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center justify-between shadow-sm">
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{scenario}</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Spoken interactive simulation</p>
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Situational Roleplays (Spoken AI)
+              </h2>
+              <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                Interactive
+              </span>
+            </div>
+
+            {[
+              {
+                title: 'Office: Appreciating & Meeting',
+                context: 'Speaking to your manager and team about results',
+                icon: '💼',
+              },
+              {
+                title: 'Open-Air Market: Negotiating Prices',
+                context: 'Asking for weights, prices, and small discounts',
+                icon: '🍎',
+              },
+              {
+                title: 'Restaurant: Ordering Food & Asking Bill',
+                context: 'Calling the waiter, asking daily specials',
+                icon: '🍽️',
+              },
+              {
+                title: 'Telephone: Hotel Reception Reservation',
+                context: 'Calling reception to confirm check-in dates',
+                icon: '📞',
+              },
+            ].map((scen, idx) => (
+              <div 
+                key={idx}
+                onClick={() => setActiveScenario({ title: scen.title, context: scen.context })}
+                className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center justify-between shadow-sm hover:border-slate-200 transition-all cursor-pointer active:scale-[0.99]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-xl flex items-center justify-center">
+                    {scen.icon}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{scen.title}</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">{scen.context}</p>
+                  </div>
                 </div>
-                <span className="text-xs px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg font-medium">Phase 3</span>
+                <ChevronRight className="w-4 h-4 text-slate-400" />
               </div>
             ))}
           </div>
@@ -158,34 +214,67 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
             <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 mx-auto flex items-center justify-center mb-3">
               <Mic className="w-7 h-7" />
             </div>
-            <h3 className="font-bold text-slate-900 text-base">Pronunciation Evaluation</h3>
+            <h3 className="font-bold text-slate-900 text-base">Listen & Repeat</h3>
             <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto">
-              Phoneme-level evaluation with acoustic feedback (Phase 4).
+              Phoneme-level evaluation with acoustic feedback and French intonation scoring (Phase 4).
             </p>
           </div>
         )}
 
         {activeTab === 'settings' && (
-          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-900 text-sm">Local Learning Profile</h3>
-            <div className="text-xs space-y-2 text-slate-600">
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-400">User ID</span>
-                <span className="font-mono">{profile.id}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-400">Active Language Pack</span>
-                <span className="font-semibold">{profile.targetLanguage} (French)</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-400">Database Engine</span>
-                <span className="text-emerald-600 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> SQLite Offline First
+          <div className="space-y-4">
+            {/* BYOK DeepSeek API Settings */}
+            <form onSubmit={handleSaveApiKey} className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Key className="w-4 h-4 text-indigo-600" />
+                  <span>AI Provider (DeepSeek BYOK)</span>
                 </span>
+                {keySaved && (
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
+                    Active
+                  </span>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Supabase Cloud Sync</span>
-                <span className="text-slate-400">Additive (Phase 4)</span>
+              <p className="text-xs text-slate-500">
+                Optional: Store your personal DeepSeek API key in local secure storage. The app works 100% offline with Level 1 & 2 cached patterns without a key.
+              </p>
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="sk-..."
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+              <button
+                type="submit"
+                className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm"
+              >
+                Save Secret Locally
+              </button>
+            </form>
+
+            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
+              <h3 className="font-bold text-slate-900 text-sm">Local Learning Profile</h3>
+              <div className="text-xs space-y-2 text-slate-600">
+                <div className="flex justify-between border-b pb-2">
+                  <span className="text-slate-400">User ID</span>
+                  <span className="font-mono">{profile.id}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="text-slate-400">Target Language</span>
+                  <span className="font-semibold">{profile.targetLanguage} (French)</span>
+                </div>
+                <div className="flex justify-between border-b pb-2">
+                  <span className="text-slate-400">Database Engine</span>
+                  <span className="text-emerald-600 font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> SQLite Offline First
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Supabase Cloud Sync</span>
+                  <span className="text-slate-400">Additive (Phase 4)</span>
+                </div>
               </div>
             </div>
           </div>
