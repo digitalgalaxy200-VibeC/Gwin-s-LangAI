@@ -25,6 +25,11 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
   const [adminPin, setAdminPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinError, setPinError] = useState('');
+
+  // Super admin account sign-in (verified against the Turso `users` table)
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
   
   // Turso credentials config inside Admin
   const [dbUrl, setDbUrl] = useState('');
@@ -77,15 +82,35 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
     }
   }, [isOpen]);
 
-  const handleUnlock = (e: React.FormEvent) => {
+  const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Account-based sign-in: verified against Turso and role-checked
+    if (adminEmail.trim() && adminPassword) {
+      setIsVerifying(true);
+      const result = await tursoService.loginSuperAdmin(adminEmail, adminPassword);
+      setIsVerifying(false);
+      setAdminPassword('');
+
+      if (result.success) {
+        setIsAuthenticated(true);
+        setPinError('');
+        loadStats();
+      } else {
+        setPinError(result.error || 'Invalid super admin credentials.');
+      }
+      return;
+    }
+
+    // 2. Bootstrap PIN: needed before Turso credentials exist on this device
     if (adminPin === MASTER_PIN || adminPin === 'admin' || adminPin === 'admin2026') {
       setIsAuthenticated(true);
       setPinError('');
       loadStats();
-    } else {
-      setPinError('Invalid Admin PIN. Try 1995 or admin2026.');
+      return;
     }
+
+    setPinError('Enter your super admin email and password, or the bootstrap PIN.');
   };
 
   const loadStats = async () => {
@@ -154,38 +179,62 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
           </button>
         </div>
 
-        {/* PIN Authentication Gate */}
+        {/* Super Admin Authentication Gate */}
         {!isAuthenticated ? (
           <form onSubmit={handleUnlock} className="max-w-xs mx-auto py-8 space-y-4 text-center">
             <div className="w-14 h-14 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center mx-auto">
               <Lock className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900">Enter Super Admin PIN</h3>
+              <h3 className="text-base font-black text-slate-900">Super Admin Sign In</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Protected area for database configuration and user tracking.
+                Sign in with your super admin account. The bootstrap PIN works only until the
+                Turso credentials are stored on this device.
               </p>
             </div>
             <input
-              type="password"
-              value={adminPin}
-              onChange={(e) => setAdminPin(e.target.value)}
-              placeholder="Enter PIN (Default: 1995)"
-              className="w-full px-4 py-3 rounded-2xl border border-slate-300 text-center font-mono text-base font-black tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              type="email"
+              value={adminEmail}
+              onChange={(e) => setAdminEmail(e.target.value)}
+              placeholder="Super admin email"
+              autoComplete="username"
+              className="w-full px-4 py-3 rounded-2xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
               autoFocus
+            />
+            <input
+              type="password"
+              value={adminPassword}
+              onChange={(e) => setAdminPassword(e.target.value)}
+              placeholder="Password"
+              autoComplete="current-password"
+              className="w-full px-4 py-3 rounded-2xl border border-slate-300 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             />
             {pinError && (
               <div className="text-xs text-rose-600 font-bold bg-rose-50 p-2.5 rounded-xl flex items-center justify-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5" />
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>{pinError}</span>
               </div>
             )}
             <button
               type="submit"
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-black text-xs rounded-xl shadow-md transition-all"
+              disabled={isVerifying}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:opacity-60 disabled:active:scale-100 text-white font-black text-xs rounded-xl shadow-md transition-all"
             >
-              Unlock Dashboard
+              {isVerifying ? 'Verifying…' : 'Unlock Dashboard'}
             </button>
+
+            <div className="pt-4 mt-2 border-t border-slate-100 space-y-2">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Bootstrap access
+              </p>
+              <input
+                type="password"
+                value={adminPin}
+                onChange={(e) => setAdminPin(e.target.value)}
+                placeholder="Admin PIN"
+                className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-center font-mono text-sm font-black tracking-widest text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              />
+            </div>
           </form>
         ) : (
           <div className="space-y-6">

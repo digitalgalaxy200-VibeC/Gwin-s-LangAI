@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
   target_lang     TEXT NOT NULL DEFAULT 'fr', -- 'fr' (French) OR 'en' (English)
   cefr_level      TEXT NOT NULL DEFAULT 'A1', -- 'A1', 'A2', 'B1', 'B2'
   daily_goal      INTEGER NOT NULL DEFAULT 15,-- Goal in minutes
+  role            TEXT NOT NULL DEFAULT 'learner', -- 'learner' | 'superadmin'
   created_at      TEXT NOT NULL DEFAULT (datetime('now')),
   last_login      TEXT NOT NULL DEFAULT (datetime('now'))
 );

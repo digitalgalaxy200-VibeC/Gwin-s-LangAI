@@ -15,6 +15,7 @@ export interface TursoUser {
   targetLang: 'fr' | 'en';
   cefrLevel: string;
   dailyGoal: number;
+  role?: 'learner' | 'superadmin';
 }
 
 export interface TursoConfig {
@@ -219,6 +220,66 @@ export class TursoService {
 
   public logout(): void {
     this.setCurrentUser(null);
+  }
+
+  /**
+   * Super admin sign-in. Unlike login(), this refuses any account whose
+   * `role` is not 'superadmin' and never falls back to a cached local user.
+   */
+  public async loginSuperAdmin(
+    email: string,
+    passwordPlain: string
+  ): Promise<{ success: boolean; user?: TursoUser; error?: string }> {
+    if (!this.client) {
+      return { success: false, error: 'Turso database is not connected yet.' };
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const passHash = await hashPassword(passwordPlain);
+
+    try {
+      const res = await this.client.execute({
+        sql: `SELECT id, email, name, native_lang, target_lang, cefr_level, daily_goal, password_hash,
+                     COALESCE(role, 'learner') AS role
+              FROM users WHERE email = ?`,
+        args: [cleanEmail],
+      });
+
+      if (res.rows.length === 0) {
+        return { success: false, error: 'No account found with this email.' };
+      }
+
+      const row = res.rows[0];
+      if (String(row.role) !== 'superadmin') {
+        return { success: false, error: 'This account does not have super admin access.' };
+      }
+
+      if (String(row.password_hash) !== passHash) {
+        return { success: false, error: 'Incorrect password.' };
+      }
+
+      const user: TursoUser = {
+        id: String(row.id),
+        email: String(row.email),
+        name: String(row.name),
+        nativeLang: (row.native_lang as 'en' | 'fr') || 'en',
+        targetLang: (row.target_lang as 'fr' | 'en') || 'fr',
+        cefrLevel: String(row.cefr_level || 'A1'),
+        dailyGoal: Number(row.daily_goal || 15),
+        role: 'superadmin',
+      };
+
+      return { success: true, user };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('no such column') || msg.includes('role')) {
+        return {
+          success: false,
+          error: 'Database is missing the users.role column. Run docs/turso_seed_superadmin.sql.',
+        };
+      }
+      return { success: false, error: `Sign-in failed: ${msg}` };
+    }
   }
 
   // ── Offline Queue & Sync Engine ─────────────────────────────
