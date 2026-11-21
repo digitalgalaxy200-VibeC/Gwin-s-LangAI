@@ -462,27 +462,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
               )}
             </div>
 
-            {/* Super Admin Dashboard Trigger */}
-            <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-3xl p-5 text-white shadow-md flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Master Administrator</span>
+            {/* Super Admin Dashboard Trigger - Only visible when current user is superadmin */}
+            {currentUser?.role === 'superadmin' && (
+              <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-3xl p-5 text-white shadow-md flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-amber-400 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Master Administrator</span>
+                  </div>
+                  <h4 className="text-sm font-black text-white">Super Admin Portal</h4>
+                  <p className="text-[11px] text-slate-300">
+                    Manage Turso credentials, SMTP, & view all learner consistency stats.
+                  </p>
                 </div>
-                <h4 className="text-sm font-black text-white">Super Admin Portal</h4>
-                <p className="text-[11px] text-slate-300">
-                  Manage Turso credentials & view all learner consistency stats.
-                </p>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => setIsAdminOpen(true)}
-                className="px-3.5 py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black rounded-xl text-xs shadow-xs transition-all shrink-0 ml-2"
-              >
-                Open Admin
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAdminOpen(true)}
+                  className="px-3.5 py-2.5 bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black rounded-xl text-xs shadow-xs transition-all shrink-0 ml-2"
+                >
+                  Open Admin
+                </button>
+              </div>
+            )}
 
             {/* Individual Account Status */}
             <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">

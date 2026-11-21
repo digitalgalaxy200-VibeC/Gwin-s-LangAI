@@ -3,7 +3,6 @@ import {
   Sparkles, 
   ArrowRight, 
   Volume2, 
-  ShieldCheck, 
   WifiOff, 
   Award,
   Languages,
@@ -22,15 +21,13 @@ import {
 interface PublicLandingPageProps {
   onGetStarted: () => void;
   onSignIn: () => void;
-  onOpenSuperAdmin: () => void;
 }
 
 type Lang = 'en' | 'fr';
 
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onGetStarted,
-  onSignIn,
-  onOpenSuperAdmin
+  onSignIn
 }) => {
   const [lang, setLang] = useState<Lang>('en');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -361,13 +358,6 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             >
               <span>{cur.getStartedBtn}</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onOpenSuperAdmin}
-              className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-amber-400 transition-colors"
-              title="Super Admin Portal"
-            >
-              <ShieldCheck className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -779,13 +769,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           <div className="flex items-center gap-6">
             <span>PWA Offline-First</span>
             <span>Turso Cloud Isolated</span>
-            <button 
-              onClick={onOpenSuperAdmin} 
-              className="text-slate-400 hover:text-amber-400 font-bold flex items-center gap-1 transition-colors"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{cur.footerAdmin}</span>
-            </button>
+            <span>Military-Grade Fluency</span>
           </div>
         </div>
       </footer>

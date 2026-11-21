@@ -77,7 +77,6 @@ export default function App() {
             setAuthInitialMode('login');
             setIsAuthOpen(true);
           }}
-          onOpenSuperAdmin={() => setIsAdminOpen(true)}
         />
 
         <AuthModal
@@ -98,6 +97,11 @@ export default function App() {
               syncStatus: 'synced',
             });
             setShowLanding(false);
+
+            // If superadmin, automatically open admin dashboard
+            if (u.role === 'superadmin') {
+              setIsAdminOpen(true);
+            }
           }}
         />
 
