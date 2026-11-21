@@ -81,6 +81,10 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
     }
   };
 
+  const playExampleSentence = (sentence: string) => {
+    audioEngine.playFrench(sentence, playbackSpeed);
+  };
+
   const handleNext = async () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(prev => prev + 1);
@@ -164,14 +168,24 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                   {activeItem.data.translation}
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 mt-4 text-left bg-slate-50 p-4 rounded-2xl">
-                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Example in context
+                <div className="pt-4 border-t border-slate-100 mt-4 text-left bg-slate-50 p-4 rounded-2xl relative">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Example in context
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => playExampleSentence(activeItem.data.exampleSentenceFr)}
+                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors active:scale-95"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>Listen Example</span>
+                    </button>
                   </div>
-                  <div className="text-sm font-bold text-slate-800">
+                  <div className="text-sm font-bold text-slate-800 leading-snug">
                     {activeItem.data.exampleSentenceFr}
                   </div>
-                  <div className="text-xs text-slate-500 mt-0.5">
+                  <div className="text-xs text-slate-500 mt-1">
                     {activeItem.data.exampleSentenceEn}
                   </div>
                 </div>
@@ -192,10 +206,20 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                 </div>
 
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    Everyday Sentence
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Everyday Sentence
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => playExampleSentence(activeItem.data.exampleSentenceFr)}
+                      className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors active:scale-95"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" />
+                      <span>Listen Sentence</span>
+                    </button>
                   </div>
-                  <div className="text-base font-bold text-slate-900">
+                  <div className="text-base font-bold text-slate-900 leading-snug">
                     {activeItem.data.exampleSentenceFr}
                   </div>
                   <div className="text-xs text-slate-500 mt-1">
