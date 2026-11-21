@@ -84,8 +84,20 @@ Always return a strict JSON object with:
     messageHistory: { role: 'user' | 'assistant'; content: string }[],
     apiKey?: string
   ): Promise<{ responseFr: string; responseEn: string; correction?: string }> {
+    // Build a cache key from scenario + last user message
+    const lastMsg = messageHistory[messageHistory.length - 1]?.content || '';
+    const roleplayCacheKey = `${scenario.substring(0, 60)}::${lastMsg.substring(0, 80)}`;
+    const cachedRoleplay = sharedContentCache.get(roleplayCacheKey, 'any', 'any', 'ai_roleplay_line');
+    if (cachedRoleplay) {
+      try {
+        const parsed = JSON.parse(cachedRoleplay) as { responseFr: string; responseEn: string; correction?: string };
+        console.info('[DeepSeek] Roleplay cache HIT');
+        return parsed;
+      } catch { /* fall through */ }
+    }
+
     if (!apiKey) {
-      return this.heuristicRoleplay(scenario, messageHistory[messageHistory.length - 1]?.content || '');
+      return this.heuristicRoleplay(scenario, lastMsg);
     }
 
     try {
@@ -100,14 +112,7 @@ Always return a strict JSON object with:
           messages: [
             {
               role: 'system',
-              content: `You are participating in a realistic French spoken roleplay scenario: "${scenario}".
-The user may speak in French or mixed French/English.
-Play your role naturally. Always return a strict JSON object with:
-{
-  "responseFr": "your response in natural French",
-  "responseEn": "English translation of your response",
-  "correction": "optional friendly tip if the user made a grammar error or mixed language"
-}`
+              content: `You are participating in a realistic French spoken roleplay scenario: "${scenario}".\nThe user may speak in French or mixed French/English.\nPlay your role naturally. Always return a strict JSON object with:\n{\n  "responseFr": "your response in natural French",\n  "responseEn": "English translation of your response",\n  "correction": "optional friendly tip if the user made a grammar error or mixed language"\n}`
             },
             ...messageHistory
           ],
@@ -117,9 +122,13 @@ Play your role naturally. Always return a strict JSON object with:
       });
 
       const json = await response.json();
-      return JSON.parse(json.choices[0].message.content);
+      const result = JSON.parse(json.choices[0].message.content) as { responseFr: string; responseEn: string; correction?: string };
+
+      // ── Write-through to shared roleplay cache ──────────────
+      sharedContentCache.set(roleplayCacheKey, 'any', 'any', 'ai_roleplay_line', JSON.stringify(result), 30);
+      return result;
     } catch (e) {
-      return this.heuristicRoleplay(scenario, messageHistory[messageHistory.length - 1]?.content || '');
+      return this.heuristicRoleplay(scenario, lastMsg);
     }
   }
 
