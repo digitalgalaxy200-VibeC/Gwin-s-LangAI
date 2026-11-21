@@ -178,7 +178,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
               <div className="text-[10px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1.5">
                 <span>Super Admin Portal</span>
                 <span>•</span>
-                <span className="text-emerald-600">Turso Connected</span>
+                <span className={tursoService.isConfigured() ? 'text-emerald-600' : 'text-rose-500'}>
+                  {tursoService.isConfigured() ? 'Turso Connected' : 'Database Not Connected'}
+                </span>
               </div>
               <h2 className="text-lg sm:text-xl font-black text-slate-900 mt-0.5">
                 Learners & Analytics Dashboard
@@ -203,12 +205,15 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
             <div>
               <h3 className="text-base font-black text-slate-900">Super Admin Sign In</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Sign in with your super admin account. The bootstrap PIN works only until the
-                Turso credentials are stored on this device.
+                Enter your super admin email and password. If this device is not connected to
+                the database yet, use the bootstrap PIN below to get in first.
               </p>
             </div>
             <input
-              type="email"
+              type="text"
+              inputMode="email"
+              autoCapitalize="none"
+              autoCorrect="off"
               value={adminEmail}
               onChange={(e) => setAdminEmail(e.target.value)}
               placeholder="Super admin email"
