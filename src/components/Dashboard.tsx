@@ -8,6 +8,7 @@ import { RoleplayRoom } from './RoleplayRoom';
 import { HighFrequencySpeakingLab } from './HighFrequencySpeakingLab';
 import { NewcomerSurvivalGuide } from './NewcomerSurvivalGuide';
 import { ListenAndRepeat } from './ListenAndRepeat';
+import { StructuredProgram } from './StructuredProgram';
 import { syncService } from '../services/syncService';
 import { 
   BookOpen, 
@@ -22,7 +23,8 @@ import {
   Key, 
   Cloud, 
   RefreshCw,
-  Globe
+  Globe,
+  Zap
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -30,7 +32,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
-  const [activeTab, setActiveTab] = useState<'learn' | 'hf_speak' | 'newcomer' | 'ask' | 'practise' | 'listen' | 'settings'>('newcomer');
+  const [activeTab, setActiveTab] = useState<'program' | 'learn' | 'hf_speak' | 'newcomer' | 'ask' | 'practise' | 'listen' | 'settings'>('program');
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeScenario, setActiveScenario] = useState<{ title: string; context: string } | null>(null);
@@ -131,6 +133,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
 
       {/* Main Content Area */}
       <main className="flex-1 px-4 py-5 space-y-5">
+
+        {/* ── Structured Program tab ── */}
+        {activeTab === 'program' && (
+          <StructuredProgram />
+        )}
 
         {/* ── Learn-mode tab switcher (shown for all 3 learn sub-tabs) ── */}
         {(activeTab === 'learn' || activeTab === 'newcomer' || activeTab === 'hf_speak') && (
@@ -441,16 +448,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
       </main>
 
       {/* Persistent Bottom Mobile Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200/80 px-4 py-2 z-20 max-w-md mx-auto">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200/80 px-2 py-2 z-20 max-w-md mx-auto">
         <div className="flex justify-around items-center">
+          <button
+            onClick={() => setActiveTab('program')}
+            className={`flex flex-col items-center py-1 px-2 transition-colors ${
+              activeTab === 'program' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Zap className="w-5 h-5" />
+            <span className="text-[10px] font-semibold mt-1">Program</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('learn')}
             className={`flex flex-col items-center py-1 px-2 transition-colors ${
-              activeTab === 'learn' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+              activeTab === 'learn' || activeTab === 'newcomer' || activeTab === 'hf_speak' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
             <BookOpen className="w-5 h-5" />
-            <span className="text-[10px] font-semibold mt-1">Learn</span>
+            <span className="text-[10px] font-semibold mt-1">Explore</span>
           </button>
 
           <button
