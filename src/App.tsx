@@ -16,6 +16,7 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login');
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [adminAutoOpen, setAdminAutoOpen] = useState(false);
 
   useEffect(() => {
     // Hidden bootstrap entry: visit #admin to open the portal without a
@@ -109,10 +110,9 @@ export default function App() {
             });
             setShowLanding(false);
 
-            // If superadmin, automatically open admin dashboard
-            if (u.role === 'superadmin') {
-              setIsAdminOpen(true);
-            }
+            // Superadmins also learn: hand the open-to-admin flag to Dashboard,
+            // which closes over the learner experience behind it.
+            setAdminAutoOpen(u.role === 'superadmin');
           }}
         />
 
@@ -127,7 +127,7 @@ export default function App() {
   // 2. Authenticated Learner: Enter Main App Dashboard
   return (
     <div className="min-h-screen bg-slate-100">
-      <Dashboard profile={profile} />
+      <Dashboard profile={profile} initialAdminOpen={adminAutoOpen} />
     </div>
   );
 }

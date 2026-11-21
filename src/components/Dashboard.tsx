@@ -39,9 +39,11 @@ import {
 
 interface DashboardProps {
   profile: UserProfile;
+  /** Open the admin portal on mount (superadmin sign-in). */
+  initialAdminOpen?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ profile, initialAdminOpen = false }) => {
   const [activeTab, setActiveTab] = useState<'program' | 'translate' | 'learn' | 'hf_speak' | 'newcomer' | 'ask' | 'practise' | 'listen' | 'settings'>('program');
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   // Turso Multi-Tenant Account states
   const [currentUser, setCurrentUser] = useState<TursoUser | null>(tursoService.getCurrentUser());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(initialAdminOpen);
   const [tursoUrlInput, setTursoUrlInput] = useState('');
   const [tursoTokenInput, setTursoTokenInput] = useState('');
   const [tursoSaved, setTursoSaved] = useState(tursoService.isConfigured());
@@ -137,6 +139,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
           </div>
 
           <div className="flex items-center gap-2">
+            {currentUser?.role === 'superadmin' && (
+              <button
+                type="button"
+                onClick={() => setIsAdminOpen(true)}
+                className="p-2 bg-amber-400 hover:bg-amber-300 text-slate-950 rounded-xl transition-all active:scale-95"
+                title="Open Super Admin Portal"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </button>
+            )}
             {currentUser ? (
               <button
                 type="button"
@@ -678,6 +690,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
         onClose={() => setIsAuthModalOpen(false)}
         onSuccess={(user) => {
           setCurrentUser(user);
+          if (user.role === 'superadmin') setIsAdminOpen(true);
         }}
       />
 
