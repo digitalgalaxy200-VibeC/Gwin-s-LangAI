@@ -335,6 +335,86 @@ export class TursoService {
       }
     } catch {}
   }
+
+  // ── SUPER ADMIN DASHBOARD QUERIES ──────────────────────────
+  public async fetchAdminLearnerStats(): Promise<{
+    users: {
+      id: string;
+      email: string;
+      name: string;
+      nativeLang: string;
+      targetLang: string;
+      cefrLevel: string;
+      dailyGoal: number;
+      createdAt: string;
+      lastLogin: string;
+      completedUnitsCount: number;
+      weakWordsCount: number;
+      consistencyRate: number; // Percentage based on activity
+    }[];
+    totalUsers: number;
+    totalUnitsCompleted: number;
+  }> {
+    if (!this.client) {
+      return { users: [], totalUsers: 0, totalUnitsCompleted: 0 };
+    }
+
+    try {
+      const usersRes = await this.client.execute(`
+        SELECT id, email, name, native_lang, target_lang, cefr_level, daily_goal, created_at, last_login
+        FROM users
+        ORDER BY created_at DESC
+      `);
+
+      const progressRes = await this.client.execute(`
+        SELECT user_id, COUNT(*) as cnt FROM user_progress WHERE completed = 1 GROUP BY user_id
+      `);
+
+      const weakRes = await this.client.execute(`
+        SELECT user_id, COUNT(*) as cnt FROM user_weaknesses GROUP BY user_id
+      `);
+
+      const progressMap = new Map<string, number>();
+      progressRes.rows.forEach(r => progressMap.set(String(r.user_id), Number(r.cnt)));
+
+      const weakMap = new Map<string, number>();
+      weakRes.rows.forEach(r => weakMap.set(String(r.user_id), Number(r.cnt)));
+
+      let totalUnits = 0;
+      const formatted = usersRes.rows.map(u => {
+        const uid = String(u.id);
+        const completed = progressMap.get(uid) || 0;
+        totalUnits += completed;
+        const weak = weakMap.get(uid) || 0;
+
+        // Calculate consistency metric (units done vs total 20 units)
+        const consistencyRate = Math.min(100, Math.round((completed / 20) * 100));
+
+        return {
+          id: uid,
+          email: String(u.email),
+          name: String(u.name),
+          nativeLang: String(u.native_lang || 'en'),
+          targetLang: String(u.target_lang || 'fr'),
+          cefrLevel: String(u.cefr_level || 'A1'),
+          dailyGoal: Number(u.daily_goal || 15),
+          createdAt: String(u.created_at || ''),
+          lastLogin: String(u.last_login || ''),
+          completedUnitsCount: completed,
+          weakWordsCount: weak,
+          consistencyRate,
+        };
+      });
+
+      return {
+        users: formatted,
+        totalUsers: formatted.length,
+        totalUnitsCompleted: totalUnits,
+      };
+    } catch {
+      return { users: [], totalUsers: 0, totalUnitsCompleted: 0 };
+    }
+  }
 }
 
 export const tursoService = new TursoService();
