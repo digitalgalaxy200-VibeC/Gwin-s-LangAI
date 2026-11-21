@@ -34,9 +34,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onComplete }) => {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-200 mb-4">
           <Sparkles className="w-8 h-8" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Bonjour ! Welcome to Your French AI Tutor</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Bonjour ! Welcome to Polyglot</h1>
         <p className="text-slate-500 text-sm mt-2">
-          Master real-life spoken French. Offline-ready, zero fluff.
+          Speak your way to proficiency. Offline-ready, zero fluff.
         </p>
       </div>
 

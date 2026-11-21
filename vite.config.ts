@@ -13,9 +13,9 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['favicon.svg', 'pwa-icon.svg', 'sql-wasm.wasm'],
       manifest: {
-        name: 'Polyglot',
+        name: 'Polyglot — Language Proficiency',
         short_name: 'Polyglot',
-        description: 'Offline-First Military-Grade High-Frequency Language Acquisition Platform',
+        description: 'Speak your way to proficiency. Offline-first lessons, pronunciation coaching and real-life roleplay.',
         theme_color: '#4338ca',
         background_color: '#0f172a',
         display: 'standalone',
