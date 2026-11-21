@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UserProfile } from '../types/database';
+import type { LessonUnit } from '../types/curriculum';
+import { curriculumRepo } from '../repositories/curriculumRepository';
+import { LessonPlayer } from './LessonPlayer';
 import { 
   BookOpen, 
   MessageSquare, 
@@ -8,7 +11,8 @@ import {
   Flame, 
   CheckCircle2, 
   Sparkles,
-  Volume2
+  ChevronRight,
+  Play
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -17,16 +21,29 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   const [activeTab, setActiveTab] = useState<'learn' | 'ask' | 'practise' | 'listen' | 'settings'>('learn');
+  const [lessons, setLessons] = useState<LessonUnit[]>([]);
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
 
-  const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
+  useEffect(() => {
+    async function fetchLessons() {
+      const data = await curriculumRepo.getLessons();
+      setLessons(data);
     }
-  };
+    fetchLessons();
+  }, []);
+
+  if (activeLessonId) {
+    return (
+      <LessonPlayer
+        lessonId={activeLessonId}
+        userId={profile.id}
+        onClose={() => setActiveLessonId(null)}
+        onCompleted={() => {
+          // Refresh list or trigger progress state
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col pb-24 max-w-md mx-auto">
@@ -43,7 +60,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-full text-amber-700 text-xs font-bold">
             <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-            <span>Day 1 Streak</span>
+            <span>Day 1</span>
           </div>
         </div>
       </header>
@@ -52,69 +69,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
       <main className="flex-1 px-4 py-5 space-y-5">
         {activeTab === 'learn' && (
           <>
-            {/* Daily Goal Card */}
-            <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-5 text-white shadow-lg shadow-indigo-100">
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs font-semibold text-indigo-200 uppercase tracking-wider">Today's Focus</span>
-                  <h3 className="text-lg font-bold mt-1">Appreciating Someone's Work</h3>
-                  <p className="text-indigo-100 text-xs mt-1">
-                    Master polite office affirmations & feedback expressions.
-                  </p>
+            {/* Featured Next Lesson Banner */}
+            {lessons.length > 0 && (
+              <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-3xl p-5 text-white shadow-lg shadow-indigo-100">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-semibold text-indigo-200 uppercase tracking-wider">Lesson 1</span>
+                    <h3 className="text-lg font-bold mt-1">{lessons[0].title}</h3>
+                    <p className="text-indigo-100 text-xs mt-1">
+                      {lessons[0].description}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center font-bold text-sm">
+                    {profile.dailyGoalMinutes}m
+                  </div>
                 </div>
-                <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center font-bold text-sm">
-                  0/{profile.dailyGoalMinutes}m
+
+                <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
+                  <span className="text-xs text-indigo-200">
+                    {lessons[0].vocabularyIds.length} words • {lessons[0].expressionIds.length} expressions
+                  </span>
+                  <button 
+                    onClick={() => setActiveLessonId(lessons[0].id)}
+                    className="px-4 py-2 bg-white text-indigo-700 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-indigo-700" />
+                    <span>Start Lesson</span>
+                  </button>
                 </div>
               </div>
+            )}
 
-              <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="text-xs text-indigo-200">5 practical expressions</span>
-                <button 
-                  onClick={() => speakText("Vous avez fait du très bon travail.")}
-                  className="px-4 py-2 bg-white text-indigo-700 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                >
-                  <Volume2 className="w-3.5 h-3.5" />
-                  <span>Listen Example</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Learning Pillars */}
+            {/* Structured Lessons List */}
             <div className="space-y-3">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Curriculum Pillars</h2>
-              
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-4 shadow-sm hover:border-slate-200 transition-all cursor-pointer">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-base">
-                  50
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 text-sm">High-Frequency Vocab</h4>
-                  <p className="text-xs text-slate-500">Tier 1: Top 50 survival words in practical context</p>
-                </div>
-                <div className="text-xs font-bold text-slate-400">0/50</div>
-              </div>
+              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
+                Situational Curriculum (Offline)
+              </h2>
 
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-4 shadow-sm hover:border-slate-200 transition-all cursor-pointer">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-base">
-                  Être
+              {lessons.map((lesson, idx) => (
+                <div 
+                  key={lesson.id}
+                  onClick={() => setActiveLessonId(lesson.id)}
+                  className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-4 shadow-sm hover:border-slate-200 transition-all cursor-pointer active:scale-[0.99]"
+                >
+                  <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-slate-900 text-sm truncate">{lesson.title}</h4>
+                    <p className="text-xs text-slate-500 truncate">{lesson.description}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 text-sm">Conjugation Academy</h4>
-                  <p className="text-xs text-slate-500">Être, Avoir, Faire & Aller in real sentences</p>
-                </div>
-                <div className="text-xs font-bold text-slate-400">0/12</div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-4 shadow-sm hover:border-slate-200 transition-all cursor-pointer">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-base">
-                  🗣️
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 text-sm">Everyday Expressions</h4>
-                  <p className="text-xs text-slate-500">Polite greetings, market requests & asking directions</p>
-                </div>
-                <div className="text-xs font-bold text-slate-400">0/25</div>
-              </div>
+              ))}
             </div>
           </>
         )}
@@ -124,17 +131,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
             <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center mb-3">
               <Sparkles className="w-7 h-7" />
             </div>
-            <h3 className="font-bold text-slate-900 text-base">Ask AI (Phase 3 Ready)</h3>
+            <h3 className="font-bold text-slate-900 text-base">Ask AI (Phase 3)</h3>
             <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto">
-              Ask in mixed French and English: <br />
-              <span className="italic text-slate-600">"Bonjour, je voudrais parler avec... how do I say manager?"</span>
+              Ready for the 3-tier retrieval engine: exact matches, grammar slot patterns, and DeepSeek fallback.
             </p>
           </div>
         )}
 
         {activeTab === 'practise' && (
           <div className="space-y-3">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Roleplay Scenarios</h2>
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">Roleplay Scenarios (Phase 3)</h2>
             {['Office Meeting', 'Market Negotiation', 'Calling Reception', 'Ordering at a Restaurant'].map((scenario, idx) => (
               <div key={idx} className="bg-white rounded-2xl p-4 border border-slate-100 flex items-center justify-between shadow-sm">
                 <div>
@@ -152,34 +158,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
             <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 mx-auto flex items-center justify-center mb-3">
               <Mic className="w-7 h-7" />
             </div>
-            <h3 className="font-bold text-slate-900 text-base">Listen & Repeat</h3>
+            <h3 className="font-bold text-slate-900 text-base">Pronunciation Evaluation</h3>
             <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto">
-              Phoneme-level pronunciation evaluation and speech rhythm practice.
+              Phoneme-level evaluation with acoustic feedback (Phase 4).
             </p>
           </div>
         )}
 
         {activeTab === 'settings' && (
           <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-900 text-sm">Local Profile Info</h3>
+            <h3 className="font-bold text-slate-900 text-sm">Local Learning Profile</h3>
             <div className="text-xs space-y-2 text-slate-600">
               <div className="flex justify-between border-b pb-2">
                 <span className="text-slate-400">User ID</span>
                 <span className="font-mono">{profile.id}</span>
               </div>
               <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-400">Target Language</span>
-                <span className="font-semibold">{profile.targetLanguage}</span>
+                <span className="text-slate-400">Active Language Pack</span>
+                <span className="font-semibold">{profile.targetLanguage} (French)</span>
               </div>
               <div className="flex justify-between border-b pb-2">
-                <span className="text-slate-400">Storage Mode</span>
+                <span className="text-slate-400">Database Engine</span>
                 <span className="text-emerald-600 font-bold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> 100% Local (SQLite)
+                  <CheckCircle2 className="w-3.5 h-3.5" /> SQLite Offline First
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Cloud Sync (Supabase)</span>
-                <span className="text-slate-400">Optional (Phase 4)</span>
+                <span className="text-slate-400">Supabase Cloud Sync</span>
+                <span className="text-slate-400">Additive (Phase 4)</span>
               </div>
             </div>
           </div>
