@@ -5,6 +5,8 @@ import { curriculumRepo } from '../repositories/curriculumRepository';
 import { LessonPlayer } from './LessonPlayer';
 import { AskAITutor } from './AskAITutor';
 import { RoleplayRoom } from './RoleplayRoom';
+import { ListenAndRepeat } from './ListenAndRepeat';
+import { syncService } from '../services/syncService';
 import { 
   BookOpen, 
   MessageSquare, 
@@ -12,10 +14,13 @@ import {
   Settings, 
   Flame, 
   CheckCircle2, 
-  Sparkles,
-  ChevronRight,
-  Play,
-  Key
+  Sparkles, 
+  ChevronRight, 
+  Play, 
+  Key, 
+  Cloud, 
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -27,8 +32,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeScenario, setActiveScenario] = useState<{ title: string; context: string } | null>(null);
+
+  // Settings states
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [keySaved, setKeySaved] = useState(false);
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [supabaseKey, setSupabaseKey] = useState('');
+  const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
+  const [syncStatusMsg, setSyncStatusMsg] = useState('');
+  const [activeLanguage, setActiveLanguage] = useState<'fr' | 'ar'>('fr');
 
   useEffect(() => {
     async function fetchLessons() {
@@ -42,12 +54,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
       setApiKeyInput(storedKey);
       setKeySaved(true);
     }
+
+    if (syncService.isReady()) {
+      setIsSupabaseConnected(true);
+    }
   }, []);
 
   const handleSaveApiKey = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('deepseek_api_key', apiKeyInput.trim());
     setKeySaved(true);
+  };
+
+  const handleConnectSupabase = (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = syncService.configure(supabaseUrl.trim(), supabaseKey.trim());
+    if (success) {
+      setIsSupabaseConnected(true);
+      setSyncStatusMsg('Supabase connected additively! Local profile preserved.');
+    }
+  };
+
+  const handleTriggerSync = async () => {
+    setSyncStatusMsg('Synchronising pending local changes...');
+    const result = await syncService.syncPendingQueue(profile);
+    setSyncStatusMsg(`Sync completed! ${result.syncedCount} records pushed.`);
   };
 
   if (activeLessonId) {
@@ -72,16 +103,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pb-24 max-w-md mx-auto">
+    <div 
+      className={`min-h-screen bg-slate-50 flex flex-col pb-24 max-w-md mx-auto ${
+        activeLanguage === 'ar' ? 'font-sans' : ''
+      }`}
+      dir={activeLanguage === 'ar' ? 'rtl' : 'ltr'}
+    >
       {/* Top Header */}
       <header className="px-5 pt-8 pb-4 bg-white border-b border-slate-100 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
-              French AI Tutor • {profile.cefrLevel}
+              {activeLanguage === 'fr' ? 'French AI Tutor' : 'Arabic AI Tutor (العربية)'} • {profile.cefrLevel}
             </div>
             <h1 className="text-xl font-bold text-slate-900 mt-0.5">
-              Bonjour, {profile.name} 👋
+              {activeLanguage === 'fr' ? `Bonjour, ${profile.name} 👋` : `مَرْحَبًا، ${profile.name} 👋`}
             </h1>
           </div>
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-full text-amber-700 text-xs font-bold">
@@ -210,19 +246,102 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
         )}
 
         {activeTab === 'listen' && (
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-center py-12">
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 mx-auto flex items-center justify-center mb-3">
-              <Mic className="w-7 h-7" />
-            </div>
-            <h3 className="font-bold text-slate-900 text-base">Listen & Repeat</h3>
-            <p className="text-xs text-slate-500 mt-2 max-w-xs mx-auto">
-              Phoneme-level evaluation with acoustic feedback and French intonation scoring (Phase 4).
-            </p>
-          </div>
+          <ListenAndRepeat />
         )}
 
         {activeTab === 'settings' && (
           <div className="space-y-4">
+            {/* Language Pack Switcher */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Language Pack Configuration
+                </h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveLanguage('fr')}
+                  className={`p-3 rounded-xl border text-center transition-all ${
+                    activeLanguage === 'fr'
+                      ? 'border-indigo-600 bg-indigo-50/60 font-bold text-indigo-700'
+                      : 'border-slate-200 text-slate-600'
+                  }`}
+                >
+                  <div className="text-base mb-1">🇫🇷</div>
+                  <div className="text-xs">French (Français)</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveLanguage('ar')}
+                  className={`p-3 rounded-xl border text-center transition-all ${
+                    activeLanguage === 'ar'
+                      ? 'border-indigo-600 bg-indigo-50/60 font-bold text-indigo-700'
+                      : 'border-slate-200 text-slate-600'
+                  }`}
+                >
+                  <div className="text-base mb-1">🇦🇪</div>
+                  <div className="text-xs font-arabic">Arabic (العربية RTL)</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Supabase Additive Cloud Sync */}
+            <form onSubmit={handleConnectSupabase} className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Cloud className="w-4 h-4 text-indigo-600" />
+                  <span>Cloud Sync (Supabase Optional)</span>
+                </span>
+                {isSupabaseConnected && (
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
+                    Connected
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500">
+                Connect your Supabase project without losing any local progress. All SQLite learning data will link seamlessly.
+              </p>
+              <input
+                type="text"
+                value={supabaseUrl}
+                onChange={(e) => setSupabaseUrl(e.target.value)}
+                placeholder="https://xyz.supabase.co"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+              <input
+                type="password"
+                value={supabaseKey}
+                onChange={(e) => setSupabaseKey(e.target.value)}
+                placeholder="Supabase anon public key"
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm"
+                >
+                  Connect Supabase
+                </button>
+                {isSupabaseConnected && (
+                  <button
+                    type="button"
+                    onClick={handleTriggerSync}
+                    className="px-4 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Sync</span>
+                  </button>
+                )}
+              </div>
+              {syncStatusMsg && (
+                <div className="text-[11px] text-indigo-600 font-medium pt-1">
+                  {syncStatusMsg}
+                </div>
+              )}
+            </form>
+
             {/* BYOK DeepSeek API Settings */}
             <form onSubmit={handleSaveApiKey} className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
@@ -237,7 +356,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
                 )}
               </div>
               <p className="text-xs text-slate-500">
-                Optional: Store your personal DeepSeek API key in local secure storage. The app works 100% offline with Level 1 & 2 cached patterns without a key.
+                Optional: Store your personal DeepSeek API key in local encrypted storage.
               </p>
               <input
                 type="password"
@@ -263,17 +382,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
                 </div>
                 <div className="flex justify-between border-b pb-2">
                   <span className="text-slate-400">Target Language</span>
-                  <span className="font-semibold">{profile.targetLanguage} (French)</span>
+                  <span className="font-semibold">{activeLanguage === 'fr' ? 'French' : 'Arabic (العربية)'}</span>
                 </div>
-                <div className="flex justify-between border-b pb-2">
+                <div className="flex justify-between">
                   <span className="text-slate-400">Database Engine</span>
                   <span className="text-emerald-600 font-bold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" /> SQLite Offline First
                   </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Supabase Cloud Sync</span>
-                  <span className="text-slate-400">Additive (Phase 4)</span>
                 </div>
               </div>
             </div>
