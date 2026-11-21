@@ -3,6 +3,7 @@ import type { LessonUnit, VocabularyItem, VerbConjugationItem, SituationalExpres
 import { curriculumRepo } from '../repositories/curriculumRepository';
 import { audioEngine } from '../services/audioEngine';
 import { Volume2, ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, Sparkles, X } from 'lucide-react';
+import { InteractiveSentence } from './InteractiveSentence';
 
 interface LessonPlayerProps {
   lessonId: string;
@@ -180,11 +181,11 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                   </div>
                 </div>
 
-                {/* Contextual Sentence Container with its own contextual audio button */}
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2">
+                {/* Contextual Sentence Container with Interactive Words */}
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Example in Context
+                      Example in Context (Tap any word)
                     </span>
                     <button
                       type="button"
@@ -192,13 +193,14 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                       className="p-2 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-indigo-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 active:scale-95"
                     >
                       <Volume2 className="w-4 h-4 text-indigo-600" />
-                      <span className="text-xs font-bold">Listen</span>
+                      <span className="text-xs font-bold">Listen All</span>
                     </button>
                   </div>
-                  <div className="text-sm font-bold text-slate-900 leading-snug">
-                    {activeItem.data.exampleSentenceFr}
-                  </div>
-                  <div className="text-xs text-slate-500 font-medium">
+                  <InteractiveSentence 
+                    sentence={activeItem.data.exampleSentenceFr}
+                    wordClassName="text-slate-900 text-base"
+                  />
+                  <div className="text-xs text-slate-500 font-medium pt-1">
                     {activeItem.data.exampleSentenceEn}
                   </div>
                 </div>
@@ -229,10 +231,10 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2">
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                      Everyday Spoken Sentence
+                      Everyday Sentence (Tap any word)
                     </span>
                     <button
                       type="button"
@@ -240,13 +242,14 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                       className="p-2 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-indigo-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 active:scale-95"
                     >
                       <Volume2 className="w-4 h-4 text-indigo-600" />
-                      <span className="text-xs font-bold">Listen</span>
+                      <span className="text-xs font-bold">Listen All</span>
                     </button>
                   </div>
-                  <div className="text-sm font-bold text-slate-900 leading-snug">
-                    {activeItem.data.exampleSentenceFr}
-                  </div>
-                  <div className="text-xs text-slate-500 font-medium">
+                  <InteractiveSentence 
+                    sentence={activeItem.data.exampleSentenceFr}
+                    wordClassName="text-slate-900 text-base"
+                  />
+                  <div className="text-xs text-slate-500 font-medium pt-1">
                     {activeItem.data.exampleSentenceEn}
                   </div>
                 </div>
@@ -261,21 +264,27 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                     {activeItem.data.situation} • {activeItem.data.formality}
                   </div>
 
-                  <div className="inline-flex items-center justify-center gap-3">
-                    <span className="text-2xl font-black text-slate-900 leading-snug">
-                      "{activeItem.data.frenchText}"
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => playSound(activeItem.data.frenchText)}
-                      className="p-3 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-2xl shadow-md shadow-indigo-200 transition-all shrink-0"
-                    >
-                      <Volume2 className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <div className="text-sm font-medium text-slate-600">
-                    {activeItem.data.englishText}
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2.5 text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        Tap any word to inspect & hear
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => playSound(activeItem.data.frenchText)}
+                        className="p-2 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 text-indigo-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 active:scale-95"
+                      >
+                        <Volume2 className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs font-bold">Listen All</span>
+                      </button>
+                    </div>
+                    <InteractiveSentence 
+                      sentence={activeItem.data.frenchText}
+                      wordClassName="text-slate-900 text-lg"
+                    />
+                    <div className="text-sm font-medium text-slate-600 pt-1">
+                      {activeItem.data.englishText}
+                    </div>
                   </div>
                 </div>
 
