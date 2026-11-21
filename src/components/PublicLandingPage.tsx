@@ -293,43 +293,43 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white antialiased">
       
       {/* Top Banner: Limited Early Cohort Notice */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-600 to-sky-700 text-white text-xs py-2 px-4 text-center font-bold tracking-wide flex items-center justify-center gap-2">
-        <span className="bg-amber-400 text-slate-950 text-[10px] uppercase font-black px-2 py-0.5 rounded-full">{cur.topBannerTag}</span>
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-gradient-to-r from-indigo-900 via-indigo-600 to-sky-700 px-3 py-2 text-center text-[10px] font-bold leading-snug tracking-wide text-white sm:px-4 sm:text-xs">
+        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase text-slate-950 sm:text-[10px]">{cur.topBannerTag}</span>
         <span>{cur.topBannerText}</span>
       </div>
 
       {/* Sticky Header Navigation */}
       <nav className="w-full border-b border-white/10 sticky top-0 bg-[#070b14]/90 backdrop-blur-xl z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
           
           {/* Logo & Protocol Title */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <img 
               src="/logo-transparent.svg" 
               alt="Polyglot Logo" 
-              className="w-11 h-11 object-contain drop-shadow-[0_4px_12px_rgba(99,102,241,0.35)]"
+              className="h-9 w-9 shrink-0 object-contain drop-shadow-[0_4px_12px_rgba(99,102,241,0.35)] sm:h-11 sm:w-11"
             />
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">{cur.appTitle}</span>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-full hidden sm:inline-block">
+                <span className="truncate text-base font-extrabold tracking-tight text-white sm:text-xl">{cur.appTitle}</span>
+                <span className="hidden rounded-full border border-indigo-400/30 bg-indigo-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-indigo-300 lg:inline-block">
                   {cur.ciaBadge}
                 </span>
               </div>
-              <span className="text-xs text-slate-400 font-medium block">
+              <span className="hidden truncate text-xs font-medium text-slate-400 sm:block">
                 {cur.appSubtitle}
               </span>
             </div>
           </div>
 
           {/* Right Header Navigation & Language Switcher */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-4">
             
             {/* Bilingual FR / EN Toggle Switch */}
-            <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl">
+            <div className="flex items-center rounded-xl border border-white/10 bg-white/5 p-1">
               <button
                 onClick={() => setLang('en')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                className={`flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-black transition-all sm:px-2.5 ${
                   lang === 'en' 
                     ? 'bg-indigo-600 text-white shadow-sm' 
                     : 'text-slate-400 hover:text-white'
@@ -341,7 +341,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               </button>
               <button
                 onClick={() => setLang('fr')}
-                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                className={`flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-black transition-all sm:px-2.5 ${
                   lang === 'fr' 
                     ? 'bg-indigo-600 text-white shadow-sm' 
                     : 'text-slate-400 hover:text-white'
@@ -353,24 +353,25 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               </button>
             </div>
 
+            {/* Guest and login live in the hero on phones, so they stay off the mobile bar */}
             <button
               onClick={onContinueAsGuest}
-              className="px-3.5 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-semibold text-xs sm:text-sm transition-all"
+              className="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-300 transition-all hover:bg-white/5 hover:text-white sm:inline-flex"
             >
               {cur.guestBtn}
             </button>
             <button
               onClick={onSignIn}
-              className="px-3.5 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-semibold text-xs sm:text-sm transition-all"
+              className="hidden rounded-xl px-3.5 py-2 text-sm font-semibold text-slate-300 transition-all hover:bg-white/5 hover:text-white sm:inline-flex"
             >
               {cur.loginBtn}
             </button>
             <button
               onClick={onGetStarted}
-              className="px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-xl bg-indigo-600 px-3 py-2 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all hover:bg-indigo-500 active:scale-95 sm:px-5 sm:py-2.5 sm:text-sm"
             >
               <span>{cur.getStartedBtn}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
           </div>
         </div>
