@@ -25,68 +25,341 @@ interface PublicLandingPageProps {
   onOpenSuperAdmin: () => void;
 }
 
+type Lang = 'en' | 'fr';
+
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onGetStarted,
   onSignIn,
   onOpenSuperAdmin
 }) => {
+  const [lang, setLang] = useState<Lang>('en');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
     setActiveFaq(activeFaq === index ? null : index);
   };
 
-  const playSampleAudio = (text: string) => {
+  const playSampleAudio = (text: string, voiceLang: 'fr-FR' | 'en-US' = 'fr-FR') => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
+      utterance.lang = voiceLang;
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
     }
   };
+
+  // Translations Dictionary for Complete Bilingual Landing Page
+  const t = {
+    en: {
+      topBannerTag: "New Protocol",
+      topBannerText: "Operational Spoken French & English: Learn the top 300 high-frequency reflexes in 14 days.",
+      appTitle: "Polyglot Protocol",
+      ciaBadge: "CIA Pattern",
+      appSubtitle: "Military-Grade Spoken Fluency • 100% Offline",
+      loginBtn: "Learner Login",
+      getStartedBtn: "Get Started",
+      heroBadge: "The High-Frequency Diplomatic & CIA Training Pattern",
+      heroTitle1: "Speak Fluent French in ",
+      heroDays: "14 Days",
+      heroTitle2: "Not 4 Years.",
+      heroDesc: "Traditional classes teach grammar tables that make you freeze in conversation. We use the CIA / Foreign Service training pattern: drill the top 20% high-frequency phrase matrices with rapid auditory reflex until you speak instinctively—with 100% offline autonomy.",
+      check1: "100% Zero-Data Offline First",
+      check2: "No Grammar Conjugation Tables",
+      check3: "Native Audio Every Single Word",
+      ctaPrimary: "Start 14-Day Protocol",
+      ctaSecondary: "Sign In to Your Workspace",
+      heroNote: "Instant on-device setup • No credit card required • Zero internet connection needed",
+      
+      problemTag: "The Fatal Flaw of Traditional Learning",
+      problemTitle: "Why 95% of People Can't Speak After Years of Lessons",
+      problemSubtitle: "You are taught how to read textbooks, not how to react in real-time. Here is how our framework rewires your brain:",
+      oldWayTitle: "The Traditional Classroom / App Way",
+      oldWaySubtitle: "High friction • Slow recall",
+      old1Title: "Conjugation paralysis:",
+      old1Desc: "You stop mid-sentence trying to remember whether to use subjunctive or imparfait.",
+      old2Title: "Unusable vocabulary:",
+      old2Desc: "Apps teach you 'the green apple is under the table' instead of how to negotiate market prices.",
+      old3Title: "Mental translation delay:",
+      old3Desc: "You translate English ➔ French in your head, creating awkward 5-second pauses.",
+      old4Title: "Internet dependent:",
+      old4Desc: "When you land at the airport or travel between cities, the app fails without Wi-Fi.",
+      
+      ciaWayBadge: "The Protocol",
+      ciaWayTitle: "The CIA High-Frequency Pattern",
+      ciaWaySubtitle: "Immediate reflex • 14-day operational competence",
+      cia1Title: "Substitution frames:",
+      cia1Desc: "Learn 1 flexible sentence skeleton, swap 10 slots, instantly command 100 variations.",
+      cia2Title: "80/20 Lexicon:",
+      cia2Desc: "Drill only the 300 words that account for 65% of all daily spoken conversations.",
+      cia3Title: "Subconscious auditory reflex:",
+      cia3Desc: "Audio prompts force your vocal cords to respond before your conscious brain can doubt.",
+      cia4Title: "100% Offline engine:",
+      cia4Desc: "Entire curriculum, phonetic audio, and dictionary run directly on device storage.",
+      
+      demoBadge: "Interactive Audio Experience",
+      demoTitle: "Experience the High-Frequency Substitution Drill",
+      demoSubtitle: "Click to hear native acoustic pronunciation. Notice how a single sentence frame ('Je voudrais...') unlocks dozens of real situations:",
+      demoTapNote: "Tap any box above to hear native audio • All 20 Units contain over 1,000+ interactive audio drills",
+      
+      caseTag: "Field Case Study: Cotonou, Benin 🇧🇯",
+      caseTitle: '"Zero French on Monday. Haggling in Dantokpa Market by the Second Week."',
+      caseDesc: "When moving to Francophone West Africa, textbook French is practically useless for negotiations, motorcycle taxis (zémidjans), and border checks. Using our 6-Block High-Frequency Routine, our learners mastered real spoken French in 14 days without internet drops slowing them down.",
+      stat1Val: "14 Days",
+      stat1Label: "To Spoken Autonomy",
+      stat2Val: "1,000",
+      stat2Label: "High-Impact Words",
+      stat3Val: "0 KB",
+      stat3Label: "Data Needed in Flight",
+      roadmapTitle: "The 14-Day Sprint Schedule",
+      step1: "Days 1-3: Emergency phonetics, numbers, taxi pricing & street navigation.",
+      step2: "Days 4-8: Food, market bargaining, transport, & social introductions.",
+      step3: "Days 9-14: Work discussions, problem resolution, and complex compound phrasing.",
+      enrollBtn: "Enroll in 14-Day Protocol",
+      
+      globalTag: "Global Multi-Tenant Architecture",
+      globalTitle: "We Started with French. The World is Next.",
+      globalDesc: "The high-frequency algorithm is language-agnostic. We have perfected French first, with full Spanish, German, Arabic, and Yoruba curriculums currently being indexed.",
+      tagFrench: "🇫🇷 French (Live)",
+      tagSpanish: "🇪🇸 Spanish (Q3)",
+      tagGerman: "🇩🇪 German (Q4)",
+      
+      feat1Title: "Bidirectional Learning",
+      feat1Desc: "English speakers learning French (🇬🇧➔🇫🇷) or French speakers learning English (🇫🇷➔🇬🇧). One tap switch.",
+      feat2Title: "Multi-User Isolation",
+      feat2Desc: "Invite your siblings, partner, or team. Each person gets a strictly isolated cloud workspace on Turso Edge.",
+      feat3Title: "Native Audio Offline",
+      feat3Desc: "Every vocabulary card, translation look-up, and sentence drill includes native French acoustic pronunciation.",
+      feat4Title: "Zero Polling & Offline Sync",
+      feat4Desc: "Learn offline for a week with zero battery or data drain. Syncs safely to the cloud only when you reconnect.",
+      
+      faqTag: "Got Questions?",
+      faqTitle: "Frequently Asked Questions",
+      faqs: [
+        {
+          q: "Can I really speak basic French within 14 days?",
+          a: "Yes. By eliminating useless grammar drills and focusing strictly on the top 20% high-frequency patterns using the CIA substitution method, you will be able to order food, negotiate prices, ask directions, and introduce yourself within 2 weeks."
+        },
+        {
+          q: "How does the offline mode work on my phone or laptop?",
+          a: "The app is a Progressive Web App (PWA). All lessons, voice audio, and translation dictionaries are cached locally on your device. You can turn on Airplane Mode for a week and continue learning without interruption."
+        },
+        {
+          q: "Can my siblings and friends learn on the same app?",
+          a: "Absolutely. Each user registers with their own email. Data is strictly separated with unique user IDs so nobody's streaks, test scores, or vocabulary notebooks ever mix."
+        },
+        {
+          q: "What if I am already a French speaker who wants to learn English?",
+          a: "Our app is completely bidirectional. You can toggle your interface to French native mode to master English (🇫🇷 ➔ 🇬🇧) using the same high-frequency audio drilling methodology."
+        },
+        {
+          q: "Do I need to install anything from an app store?",
+          a: "No! Simply open the link on Safari or Chrome, tap 'Add to Home Screen' or 'Install', and the full app installs instantly on your phone or laptop with full offline support."
+        }
+      ],
+      
+      ctaFinalTitle: "Start Your 14-Day Spoken Journey Today",
+      ctaFinalDesc: "Zero contracts. Works on any laptop, tablet, or phone. Free yourself from language anxiety with rapid subconscious drilling.",
+      ctaCreateBtn: "Create Free Account",
+      trust1: "Private & Secure",
+      trust2: "100% Offline Autonomy",
+      trust3: "Instant Activation",
+      footerTag: "High-Frequency Language Acquisition Engine",
+      footerAdmin: "Super Admin Portal"
+    },
+    fr: {
+      topBannerTag: "Nouveau Protocole",
+      topBannerText: "Français & Anglais Parlé Opérationnel : Maîtrisez les 300 réflexes à haute fréquence en 14 jours.",
+      appTitle: "Protocole Polyglotte",
+      ciaBadge: "Méthode CIA",
+      appSubtitle: "Aisance Orale de Précision • 100% Hors-Ligne",
+      loginBtn: "Connexion",
+      getStartedBtn: "Commencer",
+      heroBadge: "Le Cadre d'Entraînement Diplomatique & Haute Fréquence (Méthode CIA)",
+      heroTitle1: "Parlez Français Couramment en ",
+      heroDays: "14 Jours",
+      heroTitle2: "Pas en 4 Ans.",
+      heroDesc: "Les cours traditionnels vous noient sous des tableaux de grammaire qui vous bloquent en conversation. Nous utilisons le protocole des services diplomatiques / CIA : travaillez les 20% de matrices de phrases les plus fréquentes avec un réflexe auditif immédiat—100% hors-ligne.",
+      check1: "100% Autonome Hors-Ligne (Sans Données)",
+      check2: "Zéro Tableaux de Conjugaison Rébarbatifs",
+      check3: "Audio Natif sur Chaque Mot et Phrase",
+      ctaPrimary: "Lancer le Protocole 14 Jours",
+      ctaSecondary: "Accéder à Mon Espace",
+      heroNote: "Configuration immédiate • Aucune carte bancaire requise • Aucune connexion internet nécessaire",
+      
+      problemTag: "Le Défaut Fatal de la Méthode Traditionnelle",
+      problemTitle: "Pourquoi 95% des Gens Ne Parlent Pas Après des Années de Cours",
+      problemSubtitle: "On vous apprend à lire des manuels, pas à réagir en direct. Voici comment notre protocole reprogramme votre réflexe :",
+      oldWayTitle: "La Méthode Traditionnelle / Applications Ordinaires",
+      oldWaySubtitle: "Friction élevée • Réflexes lents",
+      old1Title: "Paralysie de la conjugaison :",
+      old1Desc: "Vous hésitez en pleine phrase pour vous souvenir s'il faut le subjonctif ou l'imparfait.",
+      old2Title: "Vocabulaire inutile :",
+      old2Desc: "Les applis vous apprennent 'la pomme verte est sur la table' au lieu de négocier au marché.",
+      old3Title: "Délai de traduction mentale :",
+      old3Desc: "Vous traduisez de l'anglais au français dans votre tête, créant un blanc gênant de 5 secondes.",
+      old4Title: "Dépendant d'internet :",
+      old4Desc: "Dès que vous atterrissez à l'aéroport ou voyagez entre deux villes, l'application plante sans Wi-Fi.",
+      
+      ciaWayBadge: "Le Protocole",
+      ciaWayTitle: "Le Modèle Haute Fréquence CIA",
+      ciaWaySubtitle: "Réflexe immédiat • Aisance opérationnelle en 14 jours",
+      cia1Title: "Matrices de substitution :",
+      cia1Desc: "Apprenez 1 squelette de phrase flexible, changez 10 éléments, maîtrisez 100 variations instantanément.",
+      cia2Title: "Lexique 80/20 :",
+      cia2Desc: "Entraînez uniquement les 300 mots qui représentent 65% des échanges oraux quotidiens.",
+      cia3Title: "Réflexe auditif subconscient :",
+      cia3Desc: "Le stimulus audio pousse vos cordes vocales à répondre avant même que le doute s'installe.",
+      cia4Title: "Moteur 100% Hors-Ligne :",
+      cia4Desc: "L'ensemble du programme, les prononciations et le dictionnaire tournent sur la mémoire de l'appareil.",
+      
+      demoBadge: "Expérience Audio Interactive",
+      demoTitle: "Testez l'Entraînement par Substitution Haute Fréquence",
+      demoSubtitle: "Cliquez pour écouter la prononciation acoustique native. Remarquez comment un seul cadre ('Je voudrais...') débloque des dizaines de situations réelles :",
+      demoTapNote: "Touchez un encadré ci-dessus pour écouter • Les 20 unités contiennent plus de 1 000 exercices audio interactifs",
+      
+      caseTag: "Étude de Cas Réelle : Cotonou, Bénin 🇧🇯",
+      caseTitle: '"Zéro français le lundi. Négociation au marché Dantokpa dès la deuxième semaine."',
+      caseDesc: "Pour s'installer en Afrique de l'Ouest francophone, le français académique est inefficace pour négocier, prendre un zémidjan ou franchir les formalités. Grâce à notre routine en 6 blocs, nos apprenants maîtrisent le français parlé réel en 14 jours, sans interruption due au réseau.",
+      stat1Val: "14 Jours",
+      stat1Label: "Pour l'Autonomie Orale",
+      stat2Val: "1 000",
+      stat2Label: "Mots à Fort Impact",
+      stat3Val: "0 Ko",
+      stat3Label: "Données en Voyage",
+      roadmapTitle: "Le Programme Sprint de 14 Jours",
+      step1: "Jours 1-3 : Phonétique d'urgence, chiffres, prix des taxis et orientation dans la rue.",
+      step2: "Jours 4-8 : Nourriture, négociation au marché, transports et présentations sociales.",
+      step3: "Jours 9-14 : Réunions professionnelles, résolution de problèmes et tournures complexes.",
+      enrollBtn: "Rejoindre le Protocole 14 Jours",
+      
+      globalTag: "Architecture Multi-Locataire Mondiale",
+      globalTitle: "Nous Avons Commencé par le Français. Le Monde Est la Prochaine Étape.",
+      globalDesc: "L'algorithme de haute fréquence fonctionne pour toutes les langues. Nous avons perfectionné le français en premier, l'espagnol, l'allemand, l'arabe et le yoruba étant en cours d'intégration.",
+      tagFrench: "🇫🇷 Français (Actif)",
+      tagSpanish: "🇪🇸 Espagnol (T3)",
+      tagGerman: "🇩🇪 Allemand (T4)",
+      
+      feat1Title: "Apprentissage Bidirectionnel",
+      feat1Desc: "Anglophones apprenant le français (🇬🇧➔🇫🇷) ou francophones apprenant l'anglais (🇫🇷➔🇬🇧). Changement en 1 clic.",
+      feat2Title: "Isolation Multi-Utilisateurs",
+      feat2Desc: "Invitez vos frères, sœurs, conjoints ou collègues. Chacun possède son espace privé isolé sur Turso Cloud.",
+      feat3Title: "Audio Natif Hors-Ligne",
+      feat3Desc: "Chaque fiche de vocabulaire, recherche de traduction et phrase d'entraînement dispose d'une prononciation native.",
+      feat4Title: "Zéro Requête Inutile & Synchronisation",
+      feat4Desc: "Apprenez hors-ligne pendant une semaine sans consommer de données. Synchronisation automatique au retour du Wi-Fi.",
+      
+      faqTag: "Des Questions ?",
+      faqTitle: "Foire Aux Questions",
+      faqs: [
+        {
+          q: "Peut-on vraiment parler un français de base en 14 jours ?",
+          a: "Oui. En supprimant les exercices de grammaire inutiles et en se concentrant sur les 20% de structures les plus fréquentes avec la méthode de substitution CIA, vous commandez à manger, négociez les prix et vous présentez en 2 semaines."
+        },
+        {
+          q: "Comment fonctionne le mode hors-ligne sur téléphone ou ordinateur ?",
+          a: "L'application est une Progressive Web App (PWA). Toutes les leçons, les fichiers vocaux et le dictionnaire sont stockés localement sur votre appareil. Vous pouvez activer le mode avion pendant une semaine et continuer à vous entraîner."
+        },
+        {
+          q: "Mes frères et sœurs peuvent-ils apprendre sur la même application ?",
+          a: "Absolument. Chaque utilisateur crée son compte avec son propre email. Les données sont strictement isolées par identifiant unique afin que les progrès et carnets ne soient jamais mélangés."
+        },
+        {
+          q: "Et si je suis francophone et que je veux apprendre l'anglais ?",
+          a: "Notre application est totalement bidirectionnelle ! Vous pouvez basculer en mode natif français pour apprendre l'anglais (🇫🇷 ➔ 🇬🇧) avec la même méthode d'entraînement auditif accéléré."
+        },
+        {
+          q: "Dois-je télécharger une application depuis l'App Store ou Google Play ?",
+          a: "Non ! Ouvrez simplement le lien sur Safari ou Chrome, cliquez sur 'Ajouter à l'écran d'accueil' ou 'Installer', et l'application s'installe directement avec son support hors-ligne complet."
+        }
+      ],
+      
+      ctaFinalTitle: "Commencez Votre Voyage Vers la Maîtrise Orale Aujourd'hui",
+      ctaFinalDesc: "Sans engagement. Fonctionne sur ordinateur, tablette ou smartphone. Libérez-vous de l'angoisse de parler grâce aux réflexes subconscients.",
+      ctaCreateBtn: "Créer un Compte Gratuit",
+      trust1: "Privé & Sécurisé",
+      trust2: "100% Autonome Hors-Ligne",
+      trust3: "Activation Immédiate",
+      footerTag: "Moteur d'Acquisition Linguistique Haute Fréquence",
+      footerAdmin: "Portail Super Admin"
+    }
+  };
+
+  const cur = t[lang];
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white antialiased">
       
       {/* Top Banner: Limited Early Cohort Notice */}
       <div className="bg-gradient-to-r from-indigo-900 via-indigo-600 to-sky-700 text-white text-xs py-2 px-4 text-center font-bold tracking-wide flex items-center justify-center gap-2">
-        <span className="bg-amber-400 text-slate-950 text-[10px] uppercase font-black px-2 py-0.5 rounded-full">New Protocol</span>
-        <span>Operational Spoken French: Learn the top 300 high-frequency reflexes in 14 days.</span>
+        <span className="bg-amber-400 text-slate-950 text-[10px] uppercase font-black px-2 py-0.5 rounded-full">{cur.topBannerTag}</span>
+        <span>{cur.topBannerText}</span>
       </div>
 
       {/* Sticky Header Navigation */}
       <nav className="w-full border-b border-white/10 sticky top-0 bg-[#070b14]/90 backdrop-blur-xl z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          
+          {/* Logo & Protocol Title */}
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center font-black text-white text-xl shadow-lg shadow-indigo-500/25">
-              🇫🇷
+              {lang === 'fr' ? '🇫🇷' : '🇬🇧'}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">Polyglot Protocol</span>
+                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-white">{cur.appTitle}</span>
                 <span className="text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 px-2 py-0.5 rounded-full hidden sm:inline-block">
-                  CIA Pattern
+                  {cur.ciaBadge}
                 </span>
               </div>
               <span className="text-xs text-slate-400 font-medium block">
-                Military-Grade Spoken Fluency • 100% Offline
+                {cur.appSubtitle}
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          {/* Right Header Navigation & Language Switcher */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            
+            {/* Bilingual FR / EN Toggle Switch */}
+            <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl">
+              <button
+                onClick={() => setLang('en')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                  lang === 'en' 
+                    ? 'bg-indigo-600 text-white shadow-sm' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Switch to English"
+              >
+                <span>🇬🇧</span>
+                <span className="hidden sm:inline">EN</span>
+              </button>
+              <button
+                onClick={() => setLang('fr')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+                  lang === 'fr' 
+                    ? 'bg-indigo-600 text-white shadow-sm' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Passer en Français"
+              >
+                <span>🇫🇷</span>
+                <span className="hidden sm:inline">FR</span>
+              </button>
+            </div>
+
             <button
               onClick={onSignIn}
-              className="px-4 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-semibold text-sm transition-all"
+              className="px-3.5 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 font-semibold text-xs sm:text-sm transition-all"
             >
-              Learner Login
+              {cur.loginBtn}
             </button>
             <button
               onClick={onGetStarted}
-              className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5"
+              className="px-4 sm:px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-600/30 transition-all active:scale-95 flex items-center gap-1.5"
             >
-              <span>Get Started</span>
+              <span>{cur.getStartedBtn}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
@@ -110,31 +383,31 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-400/30 text-indigo-300 text-xs sm:text-sm font-bold shadow-sm">
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>The High-Frequency Diplomatic & CIA Training Pattern</span>
+            <span>{cur.heroBadge}</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-[1.1]">
-            Speak Fluent French in <span className="bg-gradient-to-r from-amber-300 via-sky-300 to-indigo-400 bg-clip-text text-transparent">14 Days</span>.<br />
-            Not 4 Years.
+            {cur.heroTitle1}<span className="bg-gradient-to-r from-amber-300 via-sky-300 to-indigo-400 bg-clip-text text-transparent">{cur.heroDays}</span>.<br />
+            {cur.heroTitle2}
           </h1>
 
           <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
-            Traditional classes teach grammar tables that make you freeze in conversation. We use the <strong>CIA / Foreign Service training pattern</strong>: drill the <strong>top 20% high-frequency phrase matrices</strong> with rapid auditory reflex until you speak instinctively—with 100% offline autonomy.
+            {cur.heroDesc}
           </p>
 
           {/* Key Value Checks */}
           <div className="pt-2 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-slate-300 text-xs sm:text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>100% Zero-Data Offline First</span>
+              <span>{cur.check1}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>No Grammar Conjugation Tables</span>
+              <span>{cur.check2}</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Native Audio Every Single Word</span>
+              <span>{cur.check3}</span>
             </div>
           </div>
 
@@ -144,35 +417,35 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               onClick={onGetStarted}
               className="w-full py-4 px-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-2xl font-black text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
             >
-              <span>Start 14-Day Protocol</span>
+              <span>{cur.ctaPrimary}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
             <button
               onClick={onSignIn}
               className="w-full py-4 px-6 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-2xl font-bold text-sm transition-all active:scale-95"
             >
-              Sign In to Your Workspace
+              {cur.ctaSecondary}
             </button>
           </div>
           
           <p className="text-xs text-slate-500">
-            Instant on-device setup • No credit card required • Zero internet connection needed
+            {cur.heroNote}
           </p>
         </div>
       </header>
 
-      {/* SECTION 2: THE PROBLEM (Agitate the Old Way vs The CIA Pattern) */}
+      {/* SECTION 2: THE PROBLEM (Old Way vs The High-Frequency Pattern) */}
       <section className="py-16 bg-slate-900/50 border-y border-white/10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto space-y-3 mb-12">
             <span className="text-xs font-black uppercase tracking-widest text-red-400 bg-red-950/80 px-3 py-1 rounded-full border border-red-800/40">
-              The Fatal Flaw of Traditional Learning
+              {cur.problemTag}
             </span>
             <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              Why 95% of People Can't Speak After Years of Lessons
+              {cur.problemTitle}
             </h2>
             <p className="text-slate-400 text-sm sm:text-base">
-              You are taught how to read textbooks, not how to react in real-time. Here is how our framework rewires your brain:
+              {cur.problemSubtitle}
             </p>
           </div>
 
@@ -186,27 +459,27 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                   <XCircle className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white">The Traditional Classroom / App Way</h3>
-                  <span className="text-xs text-red-300">High friction • Slow recall</span>
+                  <h3 className="text-lg font-black text-white">{cur.oldWayTitle}</h3>
+                  <span className="text-xs text-red-300">{cur.oldWaySubtitle}</span>
                 </div>
               </div>
 
               <ul className="space-y-4 text-sm text-slate-300">
                 <li className="flex items-start gap-3">
                   <span className="text-red-400 font-bold">✕</span>
-                  <span><strong>Conjugation paralysis:</strong> You stop mid-sentence trying to remember whether to use subjunctive or imparfait.</span>
+                  <span><strong>{cur.old1Title}</strong> {cur.old1Desc}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-red-400 font-bold">✕</span>
-                  <span><strong>Unusable vocabulary:</strong> Apps teach you "the green apple is under the table" instead of how to negotiate market prices.</span>
+                  <span><strong>{cur.old2Title}</strong> {cur.old2Desc}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-red-400 font-bold">✕</span>
-                  <span><strong>Mental translation delay:</strong> You translate English $\rightarrow$ French in your head, creating awkward 5-second pauses.</span>
+                  <span><strong>{cur.old3Title}</strong> {cur.old3Desc}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-red-400 font-bold">✕</span>
-                  <span><strong>Internet dependent:</strong> When you land at the airport or travel between cities, the app fails without Wi-Fi.</span>
+                  <span><strong>{cur.old4Title}</strong> {cur.old4Desc}</span>
                 </li>
               </ul>
             </div>
@@ -214,7 +487,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             {/* The CIA Pattern */}
             <div className="bg-indigo-950/40 border border-indigo-500/40 rounded-3xl p-8 space-y-6 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-bl-2xl">
-                The Protocol
+                {cur.ciaWayBadge}
               </div>
 
               <div className="flex items-center gap-3">
@@ -222,27 +495,27 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                   <BrainCircuit className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-white">The CIA High-Frequency Pattern</h3>
-                  <span className="text-xs text-indigo-300">Immediate reflex • 14-day operational competence</span>
+                  <h3 className="text-lg font-black text-white">{cur.ciaWayTitle}</h3>
+                  <span className="text-xs text-indigo-300">{cur.ciaWaySubtitle}</span>
                 </div>
               </div>
 
               <ul className="space-y-4 text-sm text-slate-300">
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Substitution frames:</strong> Learn 1 flexible sentence skeleton, swap 10 slots, instantly command 100 variations.</span>
+                  <span><strong>{cur.cia1Title}</strong> {cur.cia1Desc}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>80/20 Lexicon:</strong> Drill only the 300 words that account for 65% of all daily spoken conversations.</span>
+                  <span><strong>{cur.cia2Title}</strong> {cur.cia2Desc}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Subconscious auditory reflex:</strong> Audio prompts force your vocal cords to respond before your conscious brain can doubt.</span>
+                  <span><strong>{cur.cia3Title}</strong> {cur.cia3Desc}</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>100% Offline engine:</strong> Entire curriculum, phonetic audio, and dictionary run on device storage.</span>
+                  <span><strong>{cur.cia4Title}</strong> {cur.cia4Desc}</span>
                 </li>
               </ul>
             </div>
@@ -256,30 +529,45 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950/60 to-slate-900 border border-white/10 rounded-3xl p-8 space-y-6 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 text-xs font-bold border border-indigo-400/20">
             <Headphones className="w-4 h-4 text-indigo-400" />
-            <span>Interactive Audio Experience</span>
+            <span>{cur.demoBadge}</span>
           </div>
 
           <h3 className="text-2xl sm:text-3xl font-black text-white">
-            Experience the High-Frequency Substitution Drill
+            {cur.demoTitle}
           </h3>
           <p className="text-sm text-slate-400 max-w-xl mx-auto">
-            Click to hear native French acoustic pronunciation. Notice how a single sentence frame ("Je voudrais...") unlocks dozens of real situations:
+            {cur.demoSubtitle}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left max-w-3xl mx-auto pt-2">
             {[
-              { fr: "Je voudrais payer par carte.", en: "I'd like to pay by card.", tag: "At the Checkout" },
-              { fr: "Je voudrais aller au marché Dantokpa.", en: "I'd like to go to Dantokpa market.", tag: "Transport / Taxi" },
-              { fr: "Je voudrais commander de l'eau.", en: "I'd like to order some water.", tag: "Restaurant / Daily" }
+              { 
+                fr: "Je voudrais payer par carte.", 
+                en: "I'd like to pay by card.", 
+                tagEn: "At the Checkout",
+                tagFr: "Au Paiement" 
+              },
+              { 
+                fr: "Je voudrais aller au marché Dantokpa.", 
+                en: "I'd like to go to Dantokpa market.", 
+                tagEn: "Transport / Taxi",
+                tagFr: "Transport / Taxi" 
+              },
+              { 
+                fr: "Je voudrais commander de l'eau.", 
+                en: "I'd like to order some water.", 
+                tagEn: "Daily Order",
+                tagFr: "Commande du Jour" 
+              }
             ].map((item, idx) => (
               <div 
                 key={idx} 
                 className="bg-slate-950/80 border border-white/10 hover:border-indigo-500/50 p-4 rounded-2xl space-y-2 cursor-pointer transition-all hover:bg-slate-900 active:scale-95"
-                onClick={() => playSampleAudio(item.fr)}
+                onClick={() => playSampleAudio(item.fr, 'fr-FR')}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase text-indigo-400 tracking-wider bg-indigo-950/90 px-2 py-0.5 rounded-md">
-                    {item.tag}
+                    {lang === 'fr' ? item.tagFr : item.tagEn}
                   </span>
                   <div className="w-7 h-7 rounded-full bg-indigo-600/30 text-indigo-300 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors">
                     <Volume2 className="w-3.5 h-3.5" />
@@ -292,7 +580,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           </div>
 
           <p className="text-[11px] text-slate-500">
-            Tap any box above to hear native audio • All 20 Units contain over 1,000+ interactive audio drills
+            {cur.demoTapNote}
           </p>
         </div>
       </section>
@@ -307,55 +595,54 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             <div className="space-y-5 max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black tracking-wide uppercase">
                 <Award className="w-4 h-4" />
-                <span>Field Case Study: Cotonou, Benin 🇧🇯</span>
+                <span>{cur.caseTag}</span>
               </div>
 
               <h2 className="text-2xl sm:text-4xl font-black text-white leading-tight">
-                "Zero French on Monday. Haggling in Dantokpa Market by the Second Week."
+                {cur.caseTitle}
               </h2>
 
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                When moving to Francophone West Africa, textbook French is practically useless for negotiations, motorcycle taxis (zémidjans), and border checks. 
-                Using our <strong>6-Block High-Frequency Routine</strong>, our founders mastered real spoken French in 14 days without internet drops slowing them down.
+                {cur.caseDesc}
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-white/10">
                 <div>
-                  <div className="text-2xl font-black text-white">14 Days</div>
-                  <div className="text-xs text-slate-400">To Spoken Autonomy</div>
+                  <div className="text-2xl font-black text-white">{cur.stat1Val}</div>
+                  <div className="text-xs text-slate-400">{cur.stat1Label}</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-white">1,000</div>
-                  <div className="text-xs text-slate-400">High-Impact Words</div>
+                  <div className="text-2xl font-black text-white">{cur.stat2Val}</div>
+                  <div className="text-xs text-slate-400">{cur.stat2Label}</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-white">0 KB</div>
-                  <div className="text-xs text-slate-400">Data Needed in Flight</div>
+                  <div className="text-2xl font-black text-white">{cur.stat3Val}</div>
+                  <div className="text-xs text-slate-400">{cur.stat3Label}</div>
                 </div>
               </div>
             </div>
 
             <div className="w-full lg:w-84 bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 backdrop-blur-sm">
-              <div className="text-xs font-extrabold uppercase text-slate-400 tracking-wider">The 14-Day Sprint Schedule</div>
+              <div className="text-xs font-extrabold uppercase text-slate-400 tracking-wider">{cur.roadmapTitle}</div>
               <ul className="space-y-3.5 text-xs sm:text-sm text-slate-300">
                 <li className="flex items-start gap-2.5">
                   <span className="w-5 h-5 rounded-full bg-indigo-600/40 text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
-                  <span><strong>Days 1-3:</strong> Emergency phonetics, numbers, taxi pricing & street navigation.</span>
+                  <span>{cur.step1}</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="w-5 h-5 rounded-full bg-indigo-600/40 text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
-                  <span><strong>Days 4-8:</strong> Food, market bargaining, transport, & social introductions.</span>
+                  <span>{cur.step2}</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="w-5 h-5 rounded-full bg-indigo-600/40 text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
-                  <span><strong>Days 9-14:</strong> Work discussions, problem resolution, and complex compound phrasing.</span>
+                  <span>{cur.step3}</span>
                 </li>
               </ul>
               <button
                 onClick={onGetStarted}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow-lg transition-all"
               >
-                Enroll in 14-Day Protocol
+                {cur.enrollBtn}
               </button>
             </div>
           </div>
@@ -369,51 +656,51 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-black uppercase text-indigo-400 tracking-wider mb-2">
                 <Globe2 className="w-4 h-4" />
-                <span>Global Multi-Tenant Architecture</span>
+                <span>{cur.globalTag}</span>
               </div>
-              <h2 className="text-3xl font-black text-white">We Started with French. The World is Next.</h2>
+              <h2 className="text-3xl font-black text-white">{cur.globalTitle}</h2>
               <p className="text-slate-400 text-sm mt-1 max-w-xl">
-                The high-frequency algorithm is language-agnostic. We have perfected French first, with full Spanish, German, Arabic, and Yoruba curriculums currently being indexed.
+                {cur.globalDesc}
               </p>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <span className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-black text-xs shadow-md">🇫🇷 French (Live)</span>
-              <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-bold">🇪🇸 Spanish (Q3)</span>
-              <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-bold">🇩🇪 German (Q4)</span>
+              <span className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white font-black text-xs shadow-md">{cur.tagFrench}</span>
+              <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-bold">{cur.tagSpanish}</span>
+              <span className="px-3.5 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-bold">{cur.tagGerman}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-slate-950 border border-white/10 rounded-2xl p-5 space-y-2">
               <Languages className="w-5 h-5 text-amber-400" />
-              <h4 className="text-base font-bold text-white">Bidirectional Learning</h4>
+              <h4 className="text-base font-bold text-white">{cur.feat1Title}</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                English speakers learning French (🇬🇧➔🇫🇷) or French speakers learning English (🇫🇷➔🇬🇧). One tap switch.
+                {cur.feat1Desc}
               </p>
             </div>
 
             <div className="bg-slate-950 border border-white/10 rounded-2xl p-5 space-y-2">
               <Users className="w-5 h-5 text-indigo-400" />
-              <h4 className="text-base font-bold text-white">Multi-User Isolation</h4>
+              <h4 className="text-base font-bold text-white">{cur.feat2Title}</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Invite your siblings, partner, or team. Each person gets a strictly isolated cloud workspace on Turso Edge.
+                {cur.feat2Desc}
               </p>
             </div>
 
             <div className="bg-slate-950 border border-white/10 rounded-2xl p-5 space-y-2">
               <Volume2 className="w-5 h-5 text-emerald-400" />
-              <h4 className="text-base font-bold text-white">Native Audio Offline</h4>
+              <h4 className="text-base font-bold text-white">{cur.feat3Title}</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Every vocabulary card, translation look-up, and sentence drill includes native French acoustic pronunciation.
+                {cur.feat3Desc}
               </p>
             </div>
 
             <div className="bg-slate-950 border border-white/10 rounded-2xl p-5 space-y-2">
               <TrendingUp className="w-5 h-5 text-sky-400" />
-              <h4 className="text-base font-bold text-white">Zero Polling & Offline Sync</h4>
+              <h4 className="text-base font-bold text-white">{cur.feat4Title}</h4>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Learn offline for a week with zero battery or data drain. Syncs safely to the cloud only when you reconnect.
+                {cur.feat4Desc}
               </p>
             </div>
           </div>
@@ -423,33 +710,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       {/* SECTION 6: FREQUENTLY ASKED QUESTIONS */}
       <section className="py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="text-center space-y-2">
-          <span className="text-xs font-black uppercase tracking-widest text-indigo-400">Got Questions?</span>
-          <h2 className="text-2xl sm:text-3xl font-black text-white">Frequently Asked Questions</h2>
+          <span className="text-xs font-black uppercase tracking-widest text-indigo-400">{cur.faqTag}</span>
+          <h2 className="text-2xl sm:text-3xl font-black text-white">{cur.faqTitle}</h2>
         </div>
         
         <div className="space-y-3 pt-4">
-          {[
-            {
-              q: "Can I really speak basic French within 14 days?",
-              a: "Yes. By eliminating useless grammar drills and focusing strictly on the top 20% high-frequency patterns using the CIA substitution method, you will be able to order food, negotiate prices, ask directions, and introduce yourself within 2 weeks."
-            },
-            {
-              q: "How does the offline mode work on my phone or laptop?",
-              a: "The app is a Progressive Web App (PWA). All lessons, voice audio, and translation dictionaries are cached locally on your device. You can turn on Airplane Mode for a week and continue learning without interruption."
-            },
-            {
-              q: "Can my siblings and friends learn on the same app?",
-              a: "Absolutely. Each user registers with their own email. Data is strictly separated with unique user IDs so nobody's streaks, test scores, or vocabulary notebooks ever mix."
-            },
-            {
-              q: "What if I am already a French speaker who wants to learn English?",
-              a: "Our app is completely bidirectional. You can toggle your interface to French native mode to master English (🇫🇷 ➔ 🇬🇧) using the same high-frequency audio drilling methodology."
-            },
-            {
-              q: "Do I need to install anything from an app store?",
-              a: "No! Simply open the link on Safari or Chrome, tap 'Add to Home Screen' or 'Install', and the full app installs instantly on your phone or laptop with full offline support."
-            }
-          ].map((faq, idx) => (
+          {cur.faqs.map((faq, idx) => (
             <div 
               key={idx}
               className="bg-slate-900 border border-white/10 rounded-2xl overflow-hidden transition-all"
@@ -478,10 +744,10 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             ⚡
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            Start Your 14-Day Spoken Journey Today
+            {cur.ctaFinalTitle}
           </h2>
           <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
-            Zero contracts. Works on any laptop, tablet, or phone. Free yourself from language anxiety with rapid subconscious drilling.
+            {cur.ctaFinalDesc}
           </p>
 
           <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
@@ -489,15 +755,15 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               onClick={onGetStarted}
               className="w-full py-4 px-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
             >
-              <span>Create Free Account</span>
+              <span>{cur.ctaCreateBtn}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
           <div className="flex items-center justify-center gap-6 text-xs text-slate-400 pt-4">
-            <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-emerald-400" /> Private & Secure</span>
-            <span className="flex items-center gap-1.5"><WifiOff className="w-3.5 h-3.5 text-indigo-400" /> 100% Offline Autonomy</span>
-            <span className="flex items-center gap-1.5"><FileCheck className="w-3.5 h-3.5 text-amber-400" /> Instant Activation</span>
+            <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5 text-emerald-400" /> {cur.trust1}</span>
+            <span className="flex items-center gap-1.5"><WifiOff className="w-3.5 h-3.5 text-indigo-400" /> {cur.trust2}</span>
+            <span className="flex items-center gap-1.5"><FileCheck className="w-3.5 h-3.5 text-amber-400" /> {cur.trust3}</span>
           </div>
         </div>
       </section>
@@ -506,8 +772,8 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       <footer className="w-full border-t border-white/10 bg-[#070b14] py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-500">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-white text-sm">Polyglot Protocol</span>
-            <span>• High-Frequency Language Acquisition Engine</span>
+            <span className="font-extrabold text-white text-sm">{cur.appTitle}</span>
+            <span>• {cur.footerTag}</span>
           </div>
 
           <div className="flex items-center gap-6">
@@ -518,7 +784,7 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
               className="text-slate-400 hover:text-amber-400 font-bold flex items-center gap-1 transition-colors"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Super Admin Portal</span>
+              <span>{cur.footerAdmin}</span>
             </button>
           </div>
         </div>
