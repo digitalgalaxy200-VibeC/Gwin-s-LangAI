@@ -144,7 +144,16 @@ export default function App() {
   // 2. Authenticated Learner: Enter Main App Dashboard
   return (
     <div className="min-h-screen bg-slate-100">
-      <Dashboard profile={profile} initialAdminOpen={adminAutoOpen} />
+      <Dashboard
+        profile={profile}
+        initialAdminOpen={adminAutoOpen}
+        onSignOut={() => {
+          setProfile(null);
+          setAdminAutoOpen(false);
+          setIsAdminOpen(false);
+          setShowLanding(true);
+        }}
+      />
     </div>
   );
 }

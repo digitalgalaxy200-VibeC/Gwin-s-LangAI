@@ -41,9 +41,15 @@ interface DashboardProps {
   profile: UserProfile;
   /** Open the admin portal on mount (superadmin sign-in). */
   initialAdminOpen?: boolean;
+  /** Called after the local session is cleared, so the shell can return to the landing page. */
+  onSignOut?: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ profile, initialAdminOpen = false }) => {
+export const Dashboard: React.FC<DashboardProps> = ({
+  profile,
+  initialAdminOpen = false,
+  onSignOut,
+}) => {
   const [activeTab, setActiveTab] = useState<'program' | 'translate' | 'learn' | 'hf_speak' | 'newcomer' | 'ask' | 'practise' | 'listen' | 'settings'>('program');
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
@@ -152,7 +158,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, initialAdminOpen 
             {currentUser ? (
               <button
                 type="button"
-                onClick={() => { tursoService.logout(); setCurrentUser(null); }}
+                onClick={() => {
+                  tursoService.logout();
+                  setCurrentUser(null);
+                  onSignOut?.();
+                }}
                 className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all active:scale-95 text-xs font-bold flex items-center gap-1"
                 title="Sign out of account"
               >
@@ -558,7 +568,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile, initialAdminOpen 
                   </div>
                   <button
                     type="button"
-                    onClick={() => { tursoService.logout(); setCurrentUser(null); }}
+                    onClick={() => {
+                      tursoService.logout();
+                      setCurrentUser(null);
+                      onSignOut?.();
+                    }}
                     className="w-full py-2 bg-slate-100 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-all"
                   >
                     Switch Account / Sign Out
