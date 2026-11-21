@@ -68,7 +68,6 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
 
   // per-block sub-state
   const [warmupIdx, setWarmupIdx]       = useState(0);
-  const [warmupRevealed, setWarmupRevealed] = useState(false);
 
   const [inputIdx, setInputIdx]         = useState(0);
   const [inputTab, setInputTab]         = useState<'words' | 'chunks'>('words');
@@ -96,7 +95,6 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
   // Reset sub-state whenever block changes
   useEffect(() => {
     setWarmupIdx(0);
-    setWarmupRevealed(false);
     setInputIdx(0);
     setInputTab('words');
     setDrillIdx(0);
@@ -260,16 +258,7 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
             {item.french}
           </div>
 
-          {warmupRevealed ? (
-            <div className="text-base text-slate-500 font-medium">{item.english}</div>
-          ) : (
-            <button
-              onClick={() => { setWarmupRevealed(true); play(item.french); }}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold text-slate-600 active:scale-95"
-            >
-              <Eye className="w-3.5 h-3.5" /> Reveal meaning
-            </button>
-          )}
+          <div className="text-base text-slate-500 font-medium text-center">{item.english}</div>
         </div>
 
         <div className="p-5">
@@ -279,7 +268,6 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
                 goNextBlock();
               } else {
                 setWarmupIdx(i => i + 1);
-                setWarmupRevealed(false);
               }
             }}
             className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm active:scale-95 transition-all shadow-md"
