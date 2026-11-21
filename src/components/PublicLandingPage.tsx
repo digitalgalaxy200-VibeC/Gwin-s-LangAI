@@ -8,7 +8,6 @@ import {
   Languages,
   CheckCircle2,
   TrendingUp,
-  BrainCircuit,
   ChevronDown,
   Globe2,
   Users,
@@ -21,7 +20,6 @@ import {
 interface PublicLandingPageProps {
   onGetStarted: () => void;
   onSignIn: () => void;
-  onOpenSuperAdmin?: () => void;
 }
 
 type Lang = 'en' | 'fr';
@@ -29,7 +27,6 @@ type Lang = 'en' | 'fr';
 export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   onGetStarted,
   onSignIn,
-  onOpenSuperAdmin,
 }) => {
   const [lang, setLang] = useState<Lang>('en');
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -302,9 +299,9 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
           {/* Logo & Protocol Title */}
           <div className="flex items-center gap-3">
             <img 
-              src="/logo.svg" 
+              src="/logo-transparent.svg" 
               alt="Polyglot Logo" 
-              className="w-11 h-11 rounded-2xl shadow-lg shadow-indigo-500/25 object-contain"
+              className="w-11 h-11 object-contain drop-shadow-[0_4px_12px_rgba(99,102,241,0.35)]"
             />
             <div>
               <div className="flex items-center gap-2">
@@ -484,9 +481,13 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
                 {cur.ciaWayBadge}
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                  <BrainCircuit className="w-6 h-6" />
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-white p-1.5 shadow-md shadow-indigo-500/20 flex items-center justify-center shrink-0">
+                  <img 
+                    src="/logo-white-bg.jpg" 
+                    alt="Polyglot Solution Emblem" 
+                    className="w-full h-full object-contain rounded-xl"
+                  />
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-white">{cur.ciaWayTitle}</h3>
@@ -734,8 +735,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       {/* SECTION 7: FINAL HIGH-CONVERTING CLOSING CALL TO ACTION */}
       <section className="py-20 text-center bg-gradient-to-b from-slate-950 to-indigo-950/70 border-t border-white/10 relative overflow-hidden">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-6 relative z-10">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-600/30 border border-indigo-500/40 mx-auto flex items-center justify-center text-3xl shadow-xl shadow-indigo-600/20">
-            ⚡
+          <div className="w-16 h-16 rounded-3xl bg-white p-2.5 mx-auto shadow-xl shadow-indigo-600/30 flex items-center justify-center">
+            <img 
+              src="/logo-white-bg.jpg" 
+              alt="Polyglot White Emblem" 
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
             {cur.ctaFinalTitle}
@@ -774,16 +779,6 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
             <span>PWA Offline-First</span>
             <span>Turso Cloud Isolated</span>
             <span>Military-Grade Fluency</span>
-            {onOpenSuperAdmin && (
-              <button
-                type="button"
-                onClick={onOpenSuperAdmin}
-                className="text-slate-600 hover:text-slate-300 transition-colors cursor-pointer"
-                title={cur.footerAdmin}
-              >
-                {cur.footerAdmin}
-              </button>
-            )}
           </div>
         </div>
       </footer>
