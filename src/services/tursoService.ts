@@ -214,45 +214,10 @@ export class TursoService {
       }
     }
 
-    // Local fallback check (also checking if user is using master admin PIN as password fallback)
+    // Local fallback: an already-authenticated session on this device
     const localUser = this.getCurrentUser();
     if (localUser && localUser.email.toLowerCase() === cleanEmail) {
       return { success: true, user: localUser };
-    }
-
-    // Master PIN fallback: allow super admin to sign in seamlessly even offline or without previous DB setup
-    if (
-      (cleanEmail === 'admin' || cleanEmail === 'admin@polyglot.ai' || cleanEmail === 'admin@frenchtutor.com' || cleanEmail.includes('admin')) &&
-      (passwordPlain === '1995' || passwordPlain === 'admin2026' || passwordPlain === 'admin')
-    ) {
-      const superAdminUser: TursoUser = {
-        id: 'usr_superadmin_master',
-        email: cleanEmail.includes('@') ? cleanEmail : 'admin@polyglot.ai',
-        name: 'Master Admin',
-        nativeLang: 'en',
-        targetLang: 'fr',
-        cefrLevel: 'C2',
-        dailyGoal: 30,
-        role: 'superadmin',
-      };
-      this.setCurrentUser(superAdminUser);
-      return { success: true, user: superAdminUser };
-    }
-
-    // Allow Master PIN '1995' directly on any email ending with admin or using master PIN
-    if (passwordPlain === '1995' || passwordPlain === 'admin2026') {
-      const superAdminUser: TursoUser = {
-        id: `usr_superadmin_${Date.now()}`,
-        email: cleanEmail,
-        name: cleanEmail.split('@')[0],
-        nativeLang: 'en',
-        targetLang: 'fr',
-        cefrLevel: 'C2',
-        dailyGoal: 30,
-        role: 'superadmin',
-      };
-      this.setCurrentUser(superAdminUser);
-      return { success: true, user: superAdminUser };
     }
 
     if (!this.client) {

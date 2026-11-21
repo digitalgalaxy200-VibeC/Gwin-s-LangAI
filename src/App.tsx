@@ -18,6 +18,17 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   useEffect(() => {
+    // Hidden bootstrap entry: visit #admin to open the portal without a
+    // visible link. Needed on a fresh device before Turso is configured.
+    const openIfAdminHash = () => {
+      if (window.location.hash === '#admin') setIsAdminOpen(true);
+    };
+    openIfAdminHash();
+    window.addEventListener('hashchange', openIfAdminHash);
+    return () => window.removeEventListener('hashchange', openIfAdminHash);
+  }, []);
+
+  useEffect(() => {
     async function loadInitialProfile() {
       try {
         const existingProfile = await profileRepo.getProfile();
@@ -77,7 +88,6 @@ export default function App() {
             setAuthInitialMode('login');
             setIsAuthOpen(true);
           }}
-          onOpenSuperAdmin={() => setIsAdminOpen(true)}
         />
 
         <AuthModal
