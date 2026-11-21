@@ -4,6 +4,8 @@
 // local history logging, and saved favorites.
 // ============================================================
 
+import { FRENCH_QUICK_GLOSSARY } from './wordLookup';
+
 export interface TranslationResult {
   sourceText: string;
   translatedText: string;
@@ -109,6 +111,9 @@ export const OFFLINE_LEXICON: LexiconEntry[] = [
   { fr: 'attendre', en: ['to wait', 'wait'], phonetic: 'a.tɑ̃dʁ', pos: 'verb' },
 
   // Food, Drinks & Dining
+  { fr: 'nourriture', en: ['food', 'nourishment'], phonetic: 'nu.ʁi.tyʁ', pos: 'noun', gender: 'f', exampleFr: 'La nourriture est excellente ici.', exampleEn: 'The food is excellent here.' },
+  { fr: 'repas', en: ['meal', 'food'], phonetic: 'ʁə.pa', pos: 'noun', gender: 'm', exampleFr: 'Bon repas !', exampleEn: 'Enjoy your meal!' },
+  { fr: 'aliment', en: ['food item', 'food', 'groceries'], phonetic: 'a.li.mɑ̃', pos: 'noun', gender: 'm' },
   { fr: 'eau', en: ['water'], phonetic: 'o', pos: 'noun', gender: 'f', exampleFr: 'Un verre d\'eau, s\'il vous plaît.', exampleEn: 'A glass of water, please.' },
   { fr: 'café', en: ['coffee'], phonetic: 'ka.fe', pos: 'noun', gender: 'm', exampleFr: 'Je voudrais un café.', exampleEn: 'I would like a coffee.' },
   { fr: 'thé', en: ['tea'], phonetic: 'te', pos: 'noun', gender: 'm' },
@@ -216,6 +221,34 @@ export const OFFLINE_LEXICON: LexiconEntry[] = [
   { fr: 'fatigué', en: ['tired'], phonetic: 'fa.ti.ɡe', pos: 'adjective' },
   { fr: 'chaud', en: ['hot', 'warm'], phonetic: 'ʃo', pos: 'adjective' },
   { fr: 'froid', en: ['cold'], phonetic: 'fʁwa', pos: 'adjective' },
+
+  // People & Family
+  { fr: 'ami', en: ['friend'], phonetic: 'a.mi', pos: 'noun', gender: 'm' },
+  { fr: 'homme', en: ['man'], phonetic: 'ɔm', pos: 'noun', gender: 'm' },
+  { fr: 'femme', en: ['woman', 'wife'], phonetic: 'fam', pos: 'noun', gender: 'f' },
+  { fr: 'enfant', en: ['child', 'kid'], phonetic: 'ɑ̃.fɑ̃', pos: 'noun', gender: 'm' },
+  { fr: 'famille', en: ['family'], phonetic: 'fa.mij', pos: 'noun', gender: 'f' },
+  { fr: 'père', en: ['father', 'dad'], phonetic: 'pɛʁ', pos: 'noun', gender: 'm' },
+  { fr: 'mère', en: ['mother', 'mom'], phonetic: 'mɛʁ', pos: 'noun', gender: 'f' },
+
+  // Daily Objects, Essentials & Life
+  { fr: 'argent', en: ['money', 'silver', 'cash'], phonetic: 'aʁ.ʒɑ̃', pos: 'noun', gender: 'm' },
+  { fr: 'sac', en: ['bag'], phonetic: 'sak', pos: 'noun', gender: 'm' },
+  { fr: 'valise', en: ['suitcase', 'luggage'], phonetic: 'va.liz', pos: 'noun', gender: 'f' },
+  { fr: 'porte', en: ['door'], phonetic: 'pɔʁt', pos: 'noun', gender: 'f' },
+  { fr: 'maison', en: ['house', 'home'], phonetic: 'mɛ.zɔ̃', pos: 'noun', gender: 'f' },
+  { fr: 'ville', en: ['city', 'town'], phonetic: 'vil', pos: 'noun', gender: 'f' },
+  { fr: 'pays', en: ['country'], phonetic: 'pe.i', pos: 'noun', gender: 'm' },
+  { fr: 'langue', en: ['language', 'tongue'], phonetic: 'lɑ̃ɡ', pos: 'noun', gender: 'f' },
+  { fr: 'monde', en: ['world'], phonetic: 'mɔ̃d', pos: 'noun', gender: 'm' },
+  { fr: 'voiture', en: ['car'], phonetic: 'vwa.tyʁ', pos: 'noun', gender: 'f' },
+  { fr: 'problème', en: ['problem', 'issue'], phonetic: 'pʁɔ.blɛm', pos: 'noun', gender: 'm' },
+  { fr: 'solution', en: ['solution'], phonetic: 'sɔ.ly.sjɔ̃', pos: 'noun', gender: 'f' },
+  { fr: 'aide', en: ['help', 'assistance'], phonetic: 'ɛd', pos: 'noun', gender: 'f' },
+  { fr: 'chose', en: ['thing'], phonetic: 'ʃoz', pos: 'noun', gender: 'f' },
+  { fr: 'livre', en: ['book'], phonetic: 'livʁ', pos: 'noun', gender: 'm' },
+  { fr: 'papier', en: ['paper'], phonetic: 'pa.pje', pos: 'noun', gender: 'm' },
+  { fr: 'prix', en: ['price', 'cost'], phonetic: 'pʁi', pos: 'noun', gender: 'm' },
 ];
 
 function normalize(s: string): string {
@@ -324,7 +357,40 @@ export const offlineTranslationService = {
       }
     }
 
-    // 3. Fallback when not found offline
+    // 3. Check FRENCH_QUICK_GLOSSARY database
+    if (sourceLang === 'fr') {
+      const gEntry = FRENCH_QUICK_GLOSSARY[norm];
+      if (gEntry) {
+        return {
+          sourceText: cleanQuery,
+          translatedText: gEntry.translation,
+          sourceLang: 'fr',
+          targetLang: 'en',
+          phonetic: gEntry.phonetic,
+          partOfSpeech: gEntry.partOfSpeech,
+          gender: gEntry.gender,
+          matchType: 'exact_dictionary',
+        };
+      }
+    } else {
+      // Find in FRENCH_QUICK_GLOSSARY by english translation text
+      for (const [frKey, gEntry] of Object.entries(FRENCH_QUICK_GLOSSARY)) {
+        if (normalize(gEntry.translation).includes(norm) || norm.includes(normalize(gEntry.translation))) {
+          return {
+            sourceText: cleanQuery,
+            translatedText: frKey,
+            sourceLang: 'en',
+            targetLang: 'fr',
+            phonetic: gEntry.phonetic,
+            partOfSpeech: gEntry.partOfSpeech,
+            gender: gEntry.gender,
+            matchType: 'exact_dictionary',
+          };
+        }
+      }
+    }
+
+    // 4. Fallback when not found offline
     return {
       sourceText: cleanQuery,
       translatedText: sourceLang === 'en'

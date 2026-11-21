@@ -5,6 +5,7 @@ import {
   type TranslationHistoryItem 
 } from '../services/offlineTranslationService';
 import { audioEngine } from '../services/audioEngine';
+import { DeepSeekProvider } from '../services/aiProvider';
 import { 
   ArrowLeftRight, 
   Volume2, 
@@ -14,7 +15,8 @@ import {
   Clock, 
   Trash2, 
   Globe2, 
-  Sparkles 
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 
 export const TranslationHub: React.FC = () => {
@@ -23,21 +25,63 @@ export const TranslationHub: React.FC = () => {
   const [currentResult, setCurrentResult] = useState<TranslationResult | null>(null);
   const [history, setHistory] = useState<TranslationHistoryItem[]>([]);
   const [historyFilter, setHistoryFilter] = useState<'all' | 'starred'>('all');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setHistory(offlineTranslationService.getHistory());
   }, []);
 
-  const handleTranslate = (textToTranslate?: string) => {
+  const handleTranslate = async (textToTranslate?: string) => {
     const text = textToTranslate !== undefined ? textToTranslate : inputText;
     if (!text.trim()) {
       setCurrentResult(null);
       return;
     }
-    const res = offlineTranslationService.translate(text, sourceLang);
-    setCurrentResult(res);
-    const saved = offlineTranslationService.addToHistory(res);
-    setHistory(prev => [saved, ...prev.filter(x => x.sourceText.toLowerCase() !== res.sourceText.toLowerCase())].slice(0, 50));
+
+    // 1. Try local offline dictionary first
+    const offlineRes = offlineTranslationService.translate(text, sourceLang);
+    
+    // If found offline, display instantly
+    if (!offlineRes.translatedText.startsWith('[')) {
+      setCurrentResult(offlineRes);
+      const saved = offlineTranslationService.addToHistory(offlineRes);
+      setHistory(prev => [saved, ...prev.filter(x => x.sourceText.toLowerCase() !== offlineRes.sourceText.toLowerCase())].slice(0, 50));
+      return;
+    }
+
+    // 2. If not indexed offline, check if DeepSeek API key is saved to translate via AI
+    const apiKey = localStorage.getItem('deepseek_api_key');
+    if (apiKey) {
+      setIsLoading(true);
+      try {
+        const provider = new DeepSeekProvider();
+        const prompt = sourceLang === 'en'
+          ? `Translate this English word or sentence into natural French: "${text}"`
+          : `Translate this French word or sentence into English: "${text}"`;
+        const aiRes = await provider.askTutor(prompt, apiKey);
+        
+        const finalRes: TranslationResult = {
+          sourceText: text.trim(),
+          translatedText: sourceLang === 'en' ? aiRes.frenchText : aiRes.englishTranslation,
+          sourceLang,
+          targetLang: sourceLang === 'en' ? 'fr' : 'en',
+          notes: aiRes.explanation,
+          matchType: 'ai_fallback',
+        };
+        setCurrentResult(finalRes);
+        const saved = offlineTranslationService.addToHistory(finalRes);
+        setHistory(prev => [saved, ...prev.filter(x => x.sourceText.toLowerCase() !== finalRes.sourceText.toLowerCase())].slice(0, 50));
+        setIsLoading(false);
+        return;
+      } catch {
+        setIsLoading(false);
+      }
+    }
+
+    // 3. Fallback when not indexed and no AI
+    setCurrentResult(offlineRes);
+    const saved = offlineTranslationService.addToHistory(offlineRes);
+    setHistory(prev => [saved, ...prev.filter(x => x.sourceText.toLowerCase() !== offlineRes.sourceText.toLowerCase())].slice(0, 50));
   };
 
   const handleSwap = () => {
@@ -163,10 +207,20 @@ export const TranslationHub: React.FC = () => {
           <button
             type="button"
             onClick={() => handleTranslate()}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
+            disabled={isLoading}
+            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-95 disabled:opacity-60 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
           >
-            <Search className="w-3.5 h-3.5" />
-            <span>Translate</span>
+            {isLoading ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Translating...</span>
+              </>
+            ) : (
+              <>
+                <Search className="w-3.5 h-3.5" />
+                <span>Translate</span>
+              </>
+            )}
           </button>
         </div>
       </div>
