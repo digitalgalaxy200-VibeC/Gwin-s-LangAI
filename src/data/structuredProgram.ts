@@ -784,6 +784,7 @@ const unit6: StructuredUnit = {
 };
 
 // ── EXPORT ───────────────────────────────────────────────────
+import { STAGE2_AND_BEYOND_UNITS } from './structuredProgramStage2';
 
 export const STRUCTURED_PROGRAM: StructuredUnit[] = [
   unit1,
@@ -792,6 +793,7 @@ export const STRUCTURED_PROGRAM: StructuredUnit[] = [
   unit4,
   unit5,
   unit6,
+  ...STAGE2_AND_BEYOND_UNITS,
 ];
 
 export const STAGE_LABELS: Record<ProgressionStage, string> = {

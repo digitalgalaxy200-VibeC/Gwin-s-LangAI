@@ -9,6 +9,8 @@ import { HighFrequencySpeakingLab } from './HighFrequencySpeakingLab';
 import { NewcomerSurvivalGuide } from './NewcomerSurvivalGuide';
 import { ListenAndRepeat } from './ListenAndRepeat';
 import { StructuredProgram } from './StructuredProgram';
+import { WeeklyRhythm, buildWeaknessReviewUnit } from './WeeklyRhythm';
+import { StructuredLessonConductor } from './StructuredLessonConductor';
 import { syncService } from '../services/syncService';
 import { 
   BookOpen, 
@@ -36,6 +38,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeScenario, setActiveScenario] = useState<{ title: string; context: string } | null>(null);
+  const [activeReviewUnit, setActiveReviewUnit] = useState<ReturnType<typeof buildWeaknessReviewUnit>>(null);
 
   // Settings states
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -106,6 +109,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
     );
   }
 
+  if (activeReviewUnit) {
+    return (
+      <StructuredLessonConductor
+        unit={activeReviewUnit}
+        userId={profile.id}
+        cefrLevel={profile.cefrLevel}
+        onClose={() => setActiveReviewUnit(null)}
+        onCompleted={() => setActiveReviewUnit(null)}
+      />
+    );
+  }
+
   return (
     <div 
       className={`min-h-screen bg-slate-50 flex flex-col pb-24 max-w-md mx-auto ${
@@ -136,7 +151,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
 
         {/* ── Structured Program tab ── */}
         {activeTab === 'program' && (
-          <StructuredProgram />
+          <div className="space-y-4">
+            <WeeklyRhythm
+              userId={profile.id}
+              currentUnitNumber={1}
+              completedCount={0}
+              totalUnits={20}
+              onStartReview={() => {
+                const reviewUnit = buildWeaknessReviewUnit(profile.id);
+                if (reviewUnit) setActiveReviewUnit(reviewUnit);
+              }}
+              onGoToProgram={() => {}}
+            />
+            <StructuredProgram userId={profile.id} cefrLevel={profile.cefrLevel} />
+          </div>
         )}
 
         {/* ── Learn-mode tab switcher (shown for all 3 learn sub-tabs) ── */}

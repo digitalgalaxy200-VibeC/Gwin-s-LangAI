@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type {
   StructuredUnit,
   LessonBlock,
@@ -11,6 +11,9 @@ import type {
 } from '../data/structuredProgram';
 import { audioEngine } from '../services/audioEngine';
 import { InteractiveSentence } from './InteractiveSentence';
+import { weaknessTracker } from '../services/weaknessTracker';
+import { aiRoleplayService } from '../services/aiRoleplay';
+import type { AIRoleplayMessage } from '../services/aiRoleplay';
 import {
   Volume2,
   ChevronRight,
@@ -21,12 +24,17 @@ import {
   Mic,
   Star,
   ArrowLeft,
+  Timer,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 
 // ── Props ─────────────────────────────────────────────────────
 
 interface LessonConductorProps {
   unit: StructuredUnit;
+  userId?: string;
+  cefrLevel?: string;
   onClose: () => void;
   onCompleted: (unitId: string) => void;
 }
@@ -34,7 +42,7 @@ interface LessonConductorProps {
 // ── Block step tracker ────────────────────────────────────────
 
 type DrillState = 'waiting' | 'revealed' | 'correct' | 'wrong';
-type RoleplayStep = 'show_app' | 'waiting_you' | 'reveal_you';
+type RoleplayStep = 'show_app' | 'waiting_you' | 'reveal_you' | 'ai_loading' | 'ai_response';
 
 // ── Block label config ────────────────────────────────────────
 
@@ -51,6 +59,8 @@ const BLOCK_META: Record<LessonBlock['type'], { label: string; icon: string; col
 
 export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
   unit,
+  userId = 'local_user',
+  cefrLevel = 'A1',
   onClose,
   onCompleted,
 }) => {
@@ -68,8 +78,14 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
   const [drillChoice, setDrillChoice]   = useState<string | null>(null);
   const [drillScore, setDrillScore]     = useState({ correct: 0, total: 0 });
 
+  // Speed drill timer
+  const [drillTimer, setDrillTimer]     = useState(0);
+  const drillTimerRef                   = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [roleplayStep, setRoleplayStep]   = useState<RoleplayStep>('show_app');
   const [roleplayExIdx, setRoleplayExIdx] = useState(0);
+  const [aiResponse, setAiResponse]       = useState<{ french: string; english: string; correction?: string } | null>(null);
+  const aiHistoryRef                      = useRef<AIRoleplayMessage[]>([]);
 
   const [isCompleted, setIsCompleted]   = useState(false);
 
@@ -88,7 +104,22 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
     setDrillChoice(null);
     setRoleplayExIdx(0);
     setRoleplayStep('show_app');
+    setAiResponse(null);
+    aiHistoryRef.current = [];
+    setDrillTimer(0);
+    if (drillTimerRef.current) clearInterval(drillTimerRef.current);
   }, [blockIndex]);
+
+  // Speed drill timer — starts when drill card is waiting
+  useEffect(() => {
+    if (block?.type === 'drill' && drillState === 'waiting') {
+      setDrillTimer(0);
+      drillTimerRef.current = setInterval(() => setDrillTimer(t => t + 1), 1000);
+    } else {
+      if (drillTimerRef.current) clearInterval(drillTimerRef.current);
+    }
+    return () => { if (drillTimerRef.current) clearInterval(drillTimerRef.current); };
+  }, [block?.type, drillState, drillIdx]);
 
   const goNextBlock = useCallback(() => {
     if (blockIndex + 1 >= totalBlocks) {
@@ -100,6 +131,28 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
   }, [blockIndex, totalBlocks, unit.id, onCompleted]);
 
   const play = (text: string) => audioEngine.playFrench(text, 0.9);
+
+  // ── AI Roleplay: fetch live response ─────────────────────────
+  const fetchAiResponse = useCallback(async (b: RoleplayBlock, userLine: string) => {
+    if (!aiRoleplayService.isAvailable()) return;
+    setRoleplayStep('ai_loading');
+    const weakWords = weaknessTracker.getWeakestWords(userId, 5).map(w => w.word);
+    const response = await aiRoleplayService.getResponse(
+      b.scenario, cefrLevel, weakWords, aiHistoryRef.current, userLine,
+    );
+    if (response.source === 'ai' && response.french) {
+      aiHistoryRef.current = [
+        ...aiHistoryRef.current,
+        { role: 'user', content: userLine },
+        { role: 'assistant', content: response.french },
+      ];
+      setAiResponse(response);
+      setRoleplayStep('ai_response');
+      play(response.french);
+    } else {
+      setRoleplayStep('reveal_you');
+    }
+  }, [userId, cefrLevel]);
 
   // ── Render: Progress Bar & Header ─────────────────────────
 
@@ -354,10 +407,13 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
   const renderDrill = (b: DrillBlock) => {
     const ex = b.exercises[drillIdx];
     const isLast = drillIdx === b.exercises.length - 1;
+    const timerColor = drillTimer < 2 ? 'text-emerald-600' : drillTimer < 4 ? 'text-amber-500' : 'text-rose-600';
 
     const handleReveal = () => {
       setDrillState('revealed');
       play(ex.answer);
+      // Record weakness — user needed to see the answer
+      weaknessTracker.recordShownAnswer(userId, ex.prompt);
     };
 
     const handleChoice = (opt: string) => {
@@ -369,6 +425,11 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
         total: s.total + 1,
       }));
       play(ex.answer);
+      if (isCorrect) {
+        weaknessTracker.recordCorrect(userId, ex.prompt);
+      } else {
+        weaknessTracker.recordWrongChoice(userId, ex.prompt);
+      }
     };
 
     const handleNext = () => {
@@ -383,9 +444,18 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
 
     return (
       <div className="flex flex-col h-full">
-        <div className="px-5 pt-5 pb-3">
-          <p className="text-xs text-slate-500">{b.instruction}</p>
-          <div className="text-[10px] text-slate-400 mt-1">{drillIdx + 1} / {b.exercises.length}</div>
+        <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-500">{b.instruction}</p>
+            <div className="text-[10px] text-slate-400 mt-1">{drillIdx + 1} / {b.exercises.length}</div>
+          </div>
+          {/* Speed Timer */}
+          {drillState === 'waiting' && (
+            <div className={`flex items-center gap-1 font-black text-sm ${timerColor}`}>
+              <Timer className="w-3.5 h-3.5" />
+              {drillTimer}s
+            </div>
+          )}
         </div>
 
         <div className="flex-1 px-5 space-y-4 flex flex-col justify-center">
@@ -503,6 +573,7 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
   const renderRoleplay = (b: RoleplayBlock) => {
     const ex = b.exchanges[roleplayExIdx];
     const isLast = roleplayExIdx === b.exchanges.length - 1;
+    const aiAvailable = aiRoleplayService.isAvailable();
 
     const handleAppNext = () => {
       play(ex.french);
@@ -512,14 +583,28 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
     const handleRevealYou = () => {
       setRoleplayStep('reveal_you');
       play(ex.french);
+      weaknessTracker.recordShownAnswer(userId, ex.french);
+    };
+
+    const handleISaidIt = () => {
+      setDrillScore(s => ({ correct: s.correct + 1, total: s.total + 1 }));
+      weaknessTracker.recordCorrect(userId, ex.french);
+      // If AI available and next line is app's, fetch AI response
+      if (aiAvailable && b.aiSlot) {
+        void fetchAiResponse(b, ex.french);
+      } else {
+        setRoleplayStep('reveal_you');
+      }
     };
 
     const handleNext = () => {
+      setAiResponse(null);
       if (isLast) {
         goNextBlock();
       } else {
         setRoleplayExIdx(i => i + 1);
-        setRoleplayStep(b.exchanges[roleplayExIdx + 1].speaker === 'app' ? 'show_app' : 'waiting_you');
+        const nextEx = b.exchanges[roleplayExIdx + 1];
+        setRoleplayStep(nextEx.speaker === 'app' ? 'show_app' : 'waiting_you');
       }
     };
 
@@ -527,7 +612,14 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
       <div className="flex flex-col h-full">
         <div className="px-5 pt-5 pb-3 space-y-2">
           <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-100">
-            <div className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">📍 Scenario</div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-black text-emerald-700 uppercase tracking-wider">📍 Scenario</div>
+              {aiAvailable && b.aiSlot && (
+                <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5" /> AI Live
+                </span>
+              )}
+            </div>
             <div className="text-xs text-slate-700 mt-0.5">{b.scenario}</div>
           </div>
           <p className="text-xs text-slate-500">{b.instruction}</p>
@@ -538,15 +630,46 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
           {b.exchanges.slice(0, roleplayExIdx).map((ex, i) => (
             <div key={i} className={`flex ${ex.speaker === 'you' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${ex.speaker === 'you' ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-900'}`}>
-                <div className="text-xs font-bold opacity-70 mb-1">{ex.speaker === 'you' ? 'You' : '🤖 App (Scripted)'}</div>
+                <div className="text-xs font-bold opacity-70 mb-1">{ex.speaker === 'you' ? 'You' : aiAvailable ? '✨ AI' : '🤖 Scripted'}</div>
                 <div className="text-sm font-black">{ex.french}</div>
                 <div className="text-[10px] opacity-70 mt-0.5">{ex.english}</div>
               </div>
             </div>
           ))}
 
+          {/* AI loading state */}
+          {roleplayStep === 'ai_loading' && (
+            <div className="flex justify-start">
+              <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                <span className="text-xs text-slate-500">AI is responding...</span>
+              </div>
+            </div>
+          )}
+
+          {/* AI response */}
+          {roleplayStep === 'ai_response' && aiResponse && (
+            <div className="flex justify-start">
+              <div className="max-w-[85%] bg-white border-2 border-indigo-200 rounded-2xl px-4 py-4 space-y-2">
+                <div className="text-[10px] font-black text-indigo-600 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> AI Response
+                </div>
+                <div className="text-sm font-black text-slate-900">{aiResponse.french}</div>
+                <div className="text-xs text-slate-500">{aiResponse.english}</div>
+                {aiResponse.correction && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800">
+                    💡 {aiResponse.correction}
+                  </div>
+                )}
+                <button onClick={() => play(aiResponse.french)} className="p-1.5 bg-slate-100 rounded-lg text-slate-600">
+                  <Volume2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Current exchange */}
-          {ex && (
+          {ex && roleplayStep !== 'ai_loading' && (
             <div className={`flex ${ex.speaker === 'you' ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[85%] rounded-2xl px-4 py-4 shadow-sm ${ex.speaker === 'you' ? 'bg-indigo-50 border-2 border-indigo-300' : 'bg-white border-2 border-emerald-300'}`}>
                 <div className="text-[10px] font-black uppercase tracking-wider mb-2 text-slate-500">
@@ -593,7 +716,7 @@ export const StructuredLessonConductor: React.FC<LessonConductorProps> = ({
                           <Eye className="w-3.5 h-3.5" /> See My Line
                         </button>
                         <button
-                          onClick={() => { setRoleplayStep('reveal_you'); setDrillScore(s => ({ correct: s.correct + 1, total: s.total + 1 })); }}
+                          onClick={handleISaidIt}
                           className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95"
                         >
                           <Mic className="w-3.5 h-3.5" /> I Said It ✓

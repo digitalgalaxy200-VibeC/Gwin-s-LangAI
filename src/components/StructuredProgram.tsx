@@ -20,7 +20,15 @@ function markUnitCompleted(id: string) {
   localStorage.setItem('completed_units', JSON.stringify([...completed]));
 }
 
-export const StructuredProgram: React.FC = () => {
+interface StructuredProgramProps {
+  userId?: string;
+  cefrLevel?: string;
+}
+
+export const StructuredProgram: React.FC<StructuredProgramProps> = ({
+  userId = 'local_user',
+  cefrLevel = 'A1',
+}) => {
   const [activeUnit, setActiveUnit] = useState<StructuredUnit | null>(null);
   const [completedUnits, setCompletedUnits] = useState<Set<string>>(getCompletedUnits);
 
@@ -28,6 +36,8 @@ export const StructuredProgram: React.FC = () => {
     return (
       <StructuredLessonConductor
         unit={activeUnit}
+        userId={userId}
+        cefrLevel={cefrLevel}
         onClose={() => setActiveUnit(null)}
         onCompleted={(id) => {
           markUnitCompleted(id);
