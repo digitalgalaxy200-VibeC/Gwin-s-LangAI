@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { LessonUnit, VocabularyItem, VerbConjugationItem, SituationalExpression } from '../types/curriculum';
 import { curriculumRepo } from '../repositories/curriculumRepository';
 import { audioEngine } from '../services/audioEngine';
-import { Volume2, ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
+import { Volume2, ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, Sparkles, X } from 'lucide-react';
 
 interface LessonPlayerProps {
   lessonId: string;
@@ -85,6 +85,12 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
     audioEngine.playFrench(sentence, playbackSpeed);
   };
 
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
   const handleNext = async () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(prev => prev + 1);
@@ -114,13 +120,25 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
       {/* Top Header & Progress Bar */}
       <div className="bg-white px-5 pt-6 pb-4 border-b border-slate-100 sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
-          <button 
-            onClick={onClose} 
-            className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="text-xs font-bold text-slate-700 tracking-tight text-center truncate max-w-[200px]">
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={onClose} 
+              title="Exit lesson"
+              className="p-2 -ml-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {currentStep > 0 && !isFinished && (
+              <button
+                onClick={handlePrevious}
+                title="Previous card"
+                className="p-2 rounded-xl text-indigo-600 hover:bg-indigo-50 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+          <div className="text-xs font-bold text-slate-700 tracking-tight text-center truncate max-w-[180px]">
             {lesson.title}
           </div>
           <button
@@ -294,10 +312,19 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
 
       {/* Bottom Action Button */}
       {!isFinished && (
-        <div className="p-4 bg-white border-t border-slate-100">
+        <div className="p-4 bg-white border-t border-slate-100 flex gap-2">
+          {currentStep > 0 && (
+            <button
+              onClick={handlePrevious}
+              className="px-4 py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all flex items-center justify-center gap-1 active:scale-[0.98]"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+          )}
           <button
             onClick={handleNext}
-            className="w-full py-4 rounded-2xl bg-indigo-600 text-white font-bold text-sm shadow-md shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+            className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-bold text-sm shadow-md shadow-indigo-200 hover:bg-indigo-700 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
           >
             <span>{currentStep === totalSteps - 1 ? 'Finish Lesson' : 'Continue'}</span>
             <ArrowRight className="w-4 h-4" />
