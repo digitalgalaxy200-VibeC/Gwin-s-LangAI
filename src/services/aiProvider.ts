@@ -1,7 +1,22 @@
 import type { IAIProvider, AIResponse } from '../types/ai';
+import { sharedContentCache } from './sharedContentCache';
 
 export class DeepSeekProvider implements IAIProvider {
   public async askTutor(userPrompt: string, apiKey?: string): Promise<AIResponse> {
+    // ── Shared cache lookup (L1 → L2) ────────────────────────
+    // Key the AI explanation by the full prompt text so the exact
+    // same question from any user returns instantly without an API call.
+    const cached = sharedContentCache.get(userPrompt, 'any', 'any', 'ai_explanation');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as AIResponse;
+        console.info('[DeepSeek] Cache HIT — skipped AI call');
+        return { ...parsed, estimatedCostUsd: 0 };
+      } catch {
+        // Corrupted entry — fall through to live call
+      }
+    }
+
     // If no API key provided or offline, return smart local heuristic translation
     if (!apiKey) {
       return this.fallbackHeuristic(userPrompt);
@@ -45,14 +60,19 @@ Always return a strict JSON object with:
       const json = await response.json();
       const content = JSON.parse(json.choices[0].message.content);
 
-      return {
+      const result: AIResponse = {
         frenchText: content.frenchText,
         englishTranslation: content.englishTranslation,
         formality: content.formality || 'neutral',
         explanation: content.explanation,
         retrievalLevel: 3,
-        estimatedCostUsd: 0.0008, // Approx DeepSeek input/output token cost
+        estimatedCostUsd: 0.0008,
       };
+
+      // ── Write-through to shared cache ───────────────────────
+      // Any future user asking the identical prompt skips this call.
+      sharedContentCache.set(userPrompt, 'any', 'any', 'ai_explanation', JSON.stringify(result));
+      return result;
     } catch (err) {
       console.warn('[DeepSeekProvider] API call failed, using heuristic fallback:', err);
       return this.fallbackHeuristic(userPrompt);
