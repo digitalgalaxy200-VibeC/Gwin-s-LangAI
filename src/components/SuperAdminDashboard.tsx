@@ -37,8 +37,10 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
   const [configSuccess, setConfigSuccess] = useState('');
 
   // SMTP Email verification config
-  const [emailProvider, setEmailProvider] = useState<'resend' | 'brevo'>('resend');
+  const [emailProvider, setEmailProvider] = useState<'resend' | 'brevo' | 'gmail_emailjs'>('resend');
   const [emailApiKey, setEmailApiKey] = useState('');
+  const [emailServiceId, setEmailServiceId] = useState('');
+  const [emailTemplateId, setEmailTemplateId] = useState('');
   const [senderEmail, setSenderEmail] = useState('');
   const [senderName, setSenderName] = useState('French AI Tutor');
   const [emailSuccess, setEmailSuccess] = useState('');
@@ -75,8 +77,16 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
 
     const emailCfg = emailService.loadConfig();
     if (emailCfg) {
-      setEmailProvider(emailCfg.provider === 'brevo' ? 'brevo' : 'resend');
+      setEmailProvider(
+        emailCfg.provider === 'brevo'
+          ? 'brevo'
+          : emailCfg.provider === 'gmail_emailjs'
+            ? 'gmail_emailjs'
+            : 'resend'
+      );
       setEmailApiKey(emailCfg.apiKey);
+      setEmailServiceId(emailCfg.serviceId || '');
+      setEmailTemplateId(emailCfg.templateId || '');
       setSenderEmail(emailCfg.senderEmail);
       setSenderName(emailCfg.senderName || 'French AI Tutor');
     }
@@ -135,12 +145,18 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
 
   const handleSaveEmailConfig = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailApiKey.trim() || !senderEmail.trim()) return;
+    const isEmailJs = emailProvider === 'gmail_emailjs';
+    const missingEmailJsIds = isEmailJs && (!emailServiceId.trim() || !emailTemplateId.trim());
+    if (!emailApiKey.trim() || !senderEmail.trim() || missingEmailJsIds) return;
+
     const cfg: SmtpConfig = {
       provider: emailProvider,
       apiKey: emailApiKey.trim(),
       senderEmail: senderEmail.trim(),
       senderName: senderName.trim() || 'French AI Tutor',
+      ...(isEmailJs
+        ? { serviceId: emailServiceId.trim(), templateId: emailTemplateId.trim() }
+        : {}),
     };
     emailService.saveConfig(cfg);
     setEmailSuccess('SMTP verification service saved and activated!');
@@ -334,28 +350,39 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
                 )}
               </div>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Connect your Resend or Brevo API key. When your siblings or students register, a 6-digit confirmation code will be dispatched to their inbox automatically.
+                Connect your email sender. Choose Gmail to relay through your own Google account
+                via EmailJS, or paste a Resend or Brevo API key. A 6-digit confirmation code is
+                then dispatched to each new learner automatically.
               </p>
 
               <form onSubmit={handleSaveEmailConfig} className="space-y-2.5 pt-1">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setEmailProvider('resend')}
-                    className={`py-2 rounded-xl text-xs font-bold border text-center transition-all ${
+                    className={`py-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
                       emailProvider === 'resend' ? 'border-indigo-600 bg-indigo-50 font-black text-indigo-900' : 'border-slate-200 bg-white text-slate-600'
                     }`}
                   >
-                    Resend (Recommended)
+                    Resend
                   </button>
                   <button
                     type="button"
                     onClick={() => setEmailProvider('brevo')}
-                    className={`py-2 rounded-xl text-xs font-bold border text-center transition-all ${
+                    className={`py-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
                       emailProvider === 'brevo' ? 'border-indigo-600 bg-indigo-50 font-black text-indigo-900' : 'border-slate-200 bg-white text-slate-600'
                     }`}
                   >
-                    Brevo (Sendinblue)
+                    Brevo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmailProvider('gmail_emailjs')}
+                    className={`py-2 rounded-xl text-[11px] font-bold border text-center transition-all ${
+                      emailProvider === 'gmail_emailjs' ? 'border-indigo-600 bg-indigo-50 font-black text-indigo-900' : 'border-slate-200 bg-white text-slate-600'
+                    }`}
+                  >
+                    Gmail
                   </button>
                 </div>
 
@@ -363,16 +390,41 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ isOpen
                   type="password"
                   value={emailApiKey}
                   onChange={(e) => setEmailApiKey(e.target.value)}
-                  placeholder={emailProvider === 'resend' ? "Resend API Key (re_...)" : "Brevo API Key (xkeysib-...)"}
+                  placeholder={
+                    emailProvider === 'resend'
+                      ? 'Resend API Key (re_...)'
+                      : emailProvider === 'brevo'
+                        ? 'Brevo API Key (xkeysib-...)'
+                        : 'EmailJS Public Key'
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                 />
+
+                {emailProvider === 'gmail_emailjs' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={emailServiceId}
+                      onChange={(e) => setEmailServiceId(e.target.value)}
+                      placeholder="EmailJS Service ID"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    />
+                    <input
+                      type="text"
+                      value={emailTemplateId}
+                      onChange={(e) => setEmailTemplateId(e.target.value)}
+                      placeholder="EmailJS Template ID"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    />
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="email"
                     value={senderEmail}
                     onChange={(e) => setSenderEmail(e.target.value)}
-                    placeholder="Sender email (e.g. tutor@yourdomain.com)"
+                    placeholder="Sender email (e.g. gwin.langai@gmail.com)"
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-600"
                   />
                   <input

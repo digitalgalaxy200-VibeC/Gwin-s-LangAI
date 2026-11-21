@@ -4,11 +4,23 @@
 // Allows Super Admin to configure credentials directly in the app.
 // ============================================================
 
+export type EmailProvider =
+  | 'resend'
+  | 'brevo'
+  | 'sendgrid'
+  | 'custom_webhook'
+  | 'gmail_emailjs';
+
 export interface SmtpConfig {
-  provider: 'resend' | 'brevo' | 'sendgrid' | 'custom_webhook';
+  provider: EmailProvider;
+  /** API key, or the EmailJS public key when provider is 'gmail_emailjs'. */
   apiKey: string;
   senderEmail: string;
   senderName: string;
+  /** EmailJS service id (gmail_emailjs only). */
+  serviceId?: string;
+  /** EmailJS template id (gmail_emailjs only). */
+  templateId?: string;
 }
 
 const SMTP_CONFIG_KEY = 'smtp_email_config_v1';
@@ -29,7 +41,11 @@ export const emailService = {
 
   isConfigured(): boolean {
     const c = this.loadConfig();
-    return !!(c && c.apiKey && c.senderEmail);
+    if (!c) return false;
+    if (c.provider === 'gmail_emailjs') {
+      return !!(c.apiKey && c.serviceId && c.templateId && c.senderEmail);
+    }
+    return !!(c.apiKey && c.senderEmail);
   },
 
   generateOtp(): string {
@@ -68,7 +84,9 @@ export const emailService = {
     const config = this.loadConfig();
 
     // If admin has not yet connected a live API key, simulate gracefully with a friendly UI alert
-    if (!config || !config.apiKey) {
+    const missingEmailJsIds =
+      config?.provider === 'gmail_emailjs' && (!config.serviceId || !config.templateId);
+    if (!config || !config.apiKey || missingEmailJsIds) {
       return {
         success: true,
         simulated: true,
@@ -76,6 +94,38 @@ export const emailService = {
     }
 
     try {
+      // Gmail via EmailJS: the browser cannot open an SMTP socket, so the
+      // send goes over HTTPS to EmailJS, which relays it through the Gmail
+      // account connected in your EmailJS dashboard.
+      if (config.provider === 'gmail_emailjs') {
+        if (!config.serviceId || !config.templateId) {
+          throw new Error('EmailJS service ID and template ID are required.');
+        }
+
+        const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service_id: config.serviceId.trim(),
+            template_id: config.templateId.trim(),
+            user_id: config.apiKey.trim(),
+            template_params: {
+              to_email: recipientEmail.trim(),
+              to_name: recipientName,
+              otp: otp,
+              from_name: config.senderName || 'French AI Tutor',
+              reply_to: config.senderEmail.trim(),
+            },
+          }),
+        });
+
+        if (!res.ok) {
+          const body = await res.text().catch(() => '');
+          throw new Error(body || `EmailJS error: ${res.status} ${res.statusText}`);
+        }
+        return { success: true };
+      }
+
       // Direct integration with Resend / Brevo (Works out of the box in Cloudflare Workers & Browsers)
       if (config.provider === 'resend') {
         const res = await fetch('https://api.resend.com/emails', {
