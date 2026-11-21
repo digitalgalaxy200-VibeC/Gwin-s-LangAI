@@ -9,6 +9,7 @@ import { HighFrequencySpeakingLab } from './HighFrequencySpeakingLab';
 import { NewcomerSurvivalGuide } from './NewcomerSurvivalGuide';
 import { ListenAndRepeat } from './ListenAndRepeat';
 import { StructuredProgram } from './StructuredProgram';
+import { TranslationHub } from './TranslationHub';
 import { WeeklyRhythm, buildWeaknessReviewUnit } from './WeeklyRhythm';
 import { StructuredLessonConductor } from './StructuredLessonConductor';
 import { syncService } from '../services/syncService';
@@ -26,7 +27,8 @@ import {
   Cloud, 
   RefreshCw,
   Globe,
-  Zap
+  Zap,
+  Languages
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -34,7 +36,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
-  const [activeTab, setActiveTab] = useState<'program' | 'learn' | 'hf_speak' | 'newcomer' | 'ask' | 'practise' | 'listen' | 'settings'>('program');
+  const [activeTab, setActiveTab] = useState<'program' | 'translate' | 'learn' | 'hf_speak' | 'newcomer' | 'ask' | 'practise' | 'listen' | 'settings'>('program');
   const [lessons, setLessons] = useState<LessonUnit[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [activeScenario, setActiveScenario] = useState<{ title: string; context: string } | null>(null);
@@ -165,6 +167,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
             />
             <StructuredProgram userId={profile.id} cefrLevel={profile.cefrLevel} />
           </div>
+        )}
+
+        {/* ── Offline Instant Translation Hub ── */}
+        {activeTab === 'translate' && (
+          <TranslationHub />
         )}
 
         {/* ── Learn-mode tab switcher (shown for all 3 learn sub-tabs) ── */}
@@ -480,7 +487,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
         <div className="flex justify-around items-center">
           <button
             onClick={() => setActiveTab('program')}
-            className={`flex flex-col items-center py-1 px-2 transition-colors ${
+            className={`flex flex-col items-center py-1 px-1.5 transition-colors ${
               activeTab === 'program' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
@@ -489,8 +496,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
           </button>
 
           <button
+            onClick={() => setActiveTab('translate')}
+            className={`flex flex-col items-center py-1 px-1.5 transition-colors ${
+              activeTab === 'translate' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
+            }`}
+          >
+            <Languages className="w-5 h-5" />
+            <span className="text-[10px] font-semibold mt-1">Translate</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('learn')}
-            className={`flex flex-col items-center py-1 px-2 transition-colors ${
+            className={`flex flex-col items-center py-1 px-1.5 transition-colors ${
               activeTab === 'learn' || activeTab === 'newcomer' || activeTab === 'hf_speak' ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
