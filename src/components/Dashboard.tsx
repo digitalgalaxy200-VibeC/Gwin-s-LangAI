@@ -12,7 +12,8 @@ import { StructuredProgram } from './StructuredProgram';
 import { TranslationHub } from './TranslationHub';
 import { WeeklyRhythm, buildWeaknessReviewUnit } from './WeeklyRhythm';
 import { StructuredLessonConductor } from './StructuredLessonConductor';
-import { syncService } from '../services/syncService';
+import { tursoService, type TursoUser } from '../services/tursoService';
+import { AuthModal } from './AuthModal';
 import { 
   BookOpen, 
   MessageSquare, 
@@ -24,11 +25,14 @@ import {
   ChevronRight, 
   Play, 
   Key, 
-  Cloud, 
   RefreshCw,
   Globe,
   Zap,
-  Languages
+  Languages,
+  Database,
+  LogIn,
+  LogOut,
+  UserCheck
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -45,11 +49,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
   // Settings states
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [keySaved, setKeySaved] = useState(false);
-  const [supabaseUrl, setSupabaseUrl] = useState('');
-  const [supabaseKey, setSupabaseKey] = useState('');
-  const [isSupabaseConnected, setIsSupabaseConnected] = useState(false);
-  const [syncStatusMsg, setSyncStatusMsg] = useState('');
   const [activeLanguage, setActiveLanguage] = useState<'fr' | 'ar'>('fr');
+
+  // Turso Multi-Tenant Account states
+  const [currentUser, setCurrentUser] = useState<TursoUser | null>(tursoService.getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [tursoUrlInput, setTursoUrlInput] = useState('');
+  const [tursoTokenInput, setTursoTokenInput] = useState('');
+  const [tursoSaved, setTursoSaved] = useState(tursoService.isConfigured());
+  const [tursoSyncMsg, setTursoSyncMsg] = useState('');
 
   useEffect(() => {
     async function fetchLessons() {
@@ -63,31 +71,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
       setApiKeyInput(storedKey);
       setKeySaved(true);
     }
-
-    if (syncService.isReady()) {
-      setIsSupabaseConnected(true);
-    }
   }, []);
 
   const handleSaveApiKey = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('deepseek_api_key', apiKeyInput.trim());
     setKeySaved(true);
-  };
-
-  const handleConnectSupabase = (e: React.FormEvent) => {
-    e.preventDefault();
-    const success = syncService.configure(supabaseUrl.trim(), supabaseKey.trim());
-    if (success) {
-      setIsSupabaseConnected(true);
-      setSyncStatusMsg('Supabase connected additively! Local profile preserved.');
-    }
-  };
-
-  const handleTriggerSync = async () => {
-    setSyncStatusMsg('Synchronising pending local changes...');
-    const result = await syncService.syncPendingQueue(profile);
-    setSyncStatusMsg(`Sync completed! ${result.syncedCount} records pushed.`);
   };
 
   if (activeLessonId) {
@@ -134,16 +123,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
       <header className="px-5 pt-8 pb-4 bg-white border-b border-slate-100 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
-              {activeLanguage === 'fr' ? 'French AI Tutor' : 'Arabic AI Tutor (العربية)'} • {profile.cefrLevel}
+            <div className="text-[10px] font-black text-indigo-600 uppercase tracking-wider flex items-center gap-1.5">
+              <span>{currentUser ? `${currentUser.name} (${currentUser.nativeLang.toUpperCase()} ➔ ${currentUser.targetLang.toUpperCase()})` : 'Individual Learner'}</span>
+              <span>•</span>
+              <span>{currentUser ? currentUser.cefrLevel : profile.cefrLevel}</span>
             </div>
-            <h1 className="text-xl font-bold text-slate-900 mt-0.5">
-              {activeLanguage === 'fr' ? `Bonjour, ${profile.name} 👋` : `مَرْحَبًا، ${profile.name} 👋`}
+            <h1 className="text-lg font-black text-slate-900 mt-0.5">
+              {currentUser ? `Bonjour, ${currentUser.name} 👋` : `Bonjour, ${profile.name} 👋`}
             </h1>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/60 rounded-full text-amber-700 text-xs font-bold">
-            <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
-            <span>Day 1</span>
+
+          <div className="flex items-center gap-2">
+            {currentUser ? (
+              <button
+                type="button"
+                onClick={() => { tursoService.logout(); setCurrentUser(null); }}
+                className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all active:scale-95 text-xs font-bold flex items-center gap-1"
+                title="Sign out of account"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAuthModalOpen(true)}
+                className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl transition-all active:scale-95 text-[11px] font-black flex items-center gap-1"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 text-xs font-bold">
+              <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+              <span>Day 1</span>
+            </div>
           </div>
         </div>
       </header>
@@ -373,60 +387,134 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
               </div>
             </div>
 
-            {/* Supabase Additive Cloud Sync */}
-            <form onSubmit={handleConnectSupabase} className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+            {/* Turso Cloud Database Connection */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Cloud className="w-4 h-4 text-indigo-600" />
-                  <span>Cloud Sync (Supabase Optional)</span>
+                  <Database className="w-4 h-4 text-indigo-600" />
+                  <span>Turso Database (Cloud SQLite)</span>
                 </span>
-                {isSupabaseConnected && (
-                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                    Connected
+                {tursoSaved && (
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Connected
                   </span>
                 )}
               </div>
               <p className="text-xs text-slate-500">
-                Connect your Supabase project without losing any local progress. All SQLite learning data will link seamlessly.
+                Connect your Turso edge database. Each family member or sibling logs in with their own account; their progress is strictly isolated.
               </p>
               <input
                 type="text"
-                value={supabaseUrl}
-                onChange={(e) => setSupabaseUrl(e.target.value)}
-                placeholder="https://xyz.supabase.co"
+                value={tursoUrlInput}
+                onChange={(e) => setTursoUrlInput(e.target.value)}
+                placeholder="libsql://your-db-name.turso.io"
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
               />
               <input
                 type="password"
-                value={supabaseKey}
-                onChange={(e) => setSupabaseKey(e.target.value)}
-                placeholder="Supabase anon public key"
+                value={tursoTokenInput}
+                onChange={(e) => setTursoTokenInput(e.target.value)}
+                placeholder="Turso Auth Token"
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
               />
               <div className="flex gap-2">
                 <button
-                  type="submit"
-                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm"
+                  type="button"
+                  onClick={() => {
+                    const ok = tursoService.setConfig(tursoUrlInput, tursoTokenInput);
+                    if (ok) {
+                      setTursoSaved(true);
+                      setTursoSyncMsg('Turso database connected successfully!');
+                    } else {
+                      setTursoSyncMsg('Failed to connect. Check URL and token.');
+                    }
+                  }}
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"
                 >
-                  Connect Supabase
+                  Save Turso Credentials
                 </button>
-                {isSupabaseConnected && (
+                {tursoSaved && currentUser && (
                   <button
                     type="button"
-                    onClick={handleTriggerSync}
-                    className="px-4 py-2.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                    onClick={async () => {
+                      setTursoSyncMsg('Pushing offline progress to your Turso cloud...');
+                      const res = await tursoService.syncPendingQueue(currentUser.id);
+                      if (res.success) {
+                        setTursoSyncMsg(`Synced! ${res.pushedCount} offline records pushed.`);
+                      } else {
+                        setTursoSyncMsg(`Sync failed: ${res.error}`);
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Sync</span>
+                    <span>Sync Now</span>
                   </button>
                 )}
               </div>
-              {syncStatusMsg && (
-                <div className="text-[11px] text-indigo-600 font-medium pt-1">
-                  {syncStatusMsg}
+              {tursoSyncMsg && (
+                <div className="text-[11px] text-indigo-600 font-bold pt-1">
+                  {tursoSyncMsg}
                 </div>
               )}
-            </form>
+            </div>
+
+            {/* Individual Account Status */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-indigo-600" />
+                  <span>Current Learner Account</span>
+                </span>
+                {currentUser ? (
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
+                    Signed In
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-400 font-bold bg-slate-100 px-2 py-0.5 rounded-full">
+                    Guest Mode
+                  </span>
+                )}
+              </div>
+              {currentUser ? (
+                <div className="text-xs space-y-2 text-slate-600">
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-slate-400">Account Name</span>
+                    <span className="font-bold text-slate-900">{currentUser.name}</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-slate-400">Email</span>
+                    <span className="font-mono text-slate-800">{currentUser.email}</span>
+                  </div>
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-slate-400">Mode</span>
+                    <span className="font-extrabold text-indigo-600">
+                      {currentUser.nativeLang === 'en' ? '🇬🇧 English ➔ 🇫🇷 French' : '🇫🇷 Français ➔ 🇬🇧 English'}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { tursoService.logout(); setCurrentUser(null); }}
+                    className="w-full py-2 bg-slate-100 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-all"
+                  >
+                    Switch Account / Sign Out
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500">
+                    Sign in or register an account so your progress syncs to your personal Turso database profile.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsAuthModalOpen(true)}
+                    className="w-full py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black shadow-xs active:scale-95 transition-all"
+                  >
+                    Sign In or Create Account
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* BYOK DeepSeek API Settings */}
             <form onSubmit={handleSaveApiKey} className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
@@ -556,6 +644,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ profile }) => {
           </button>
         </div>
       </nav>
+
+      {/* Turso Multi-Tenant Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={(user) => {
+          setCurrentUser(user);
+        }}
+      />
     </div>
   );
 };
