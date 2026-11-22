@@ -1,0 +1,14 @@
+name = "polyglot-api"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+# Non-secret configuration.
+[vars]
+ALLOWED_ORIGIN = "https://gwin-s-langai.gwyn-ukoha.workers.dev"
+
+# Secrets are set out-of-band, never committed:
+#   npx wrangler secret put GOOGLE_TRANSLATE_KEY
+#
+# When database access moves behind this Worker (see README.md):
+#   npx wrangler secret put TURSO_URL
+#   npx wrangler secret put TURSO_TOKEN

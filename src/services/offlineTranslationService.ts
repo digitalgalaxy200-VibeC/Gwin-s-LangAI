@@ -388,6 +388,37 @@ export const offlineTranslationService = {
     }
 
     try {
+      // Prefer the Worker proxy when configured: it holds the provider key
+      // server-side and falls back to MyMemory itself.
+      const proxyUrl = (import.meta.env.VITE_TRANSLATE_PROXY_URL as string | undefined)?.trim();
+      if (proxyUrl) {
+        try {
+          const res = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ q: query, source: sourceLang, target: targetLang }),
+          });
+          if (res.ok) {
+            const payload = (await res.json()) as { translatedText?: string };
+            const translated = payload.translatedText?.trim();
+            if (translated) {
+              const result: TranslationResult = {
+                sourceText: query,
+                translatedText: translated,
+                sourceLang,
+                targetLang,
+                notes: 'Machine translation — verify before relying on it.',
+                matchType: 'online_api',
+              };
+              sharedContentCache.set(cacheKey, sourceLang, targetLang, 'translation', JSON.stringify(result), 1440);
+              return result;
+            }
+          }
+        } catch {
+          // Proxy unreachable — fall through to the direct provider
+        }
+      }
+
       const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(query)}&langpair=${sourceLang}|${targetLang}`;
       const res = await fetch(url);
       if (!res.ok) return null;
