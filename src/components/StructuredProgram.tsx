@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { STRUCTURED_PROGRAM, STAGE_LABELS, STAGE_DESCRIPTIONS } from '../data/structuredProgram';
 import type { StructuredUnit, ProgressionStage } from '../data/structuredProgram';
 import { StructuredLessonConductor } from './StructuredLessonConductor';
+import { tursoService } from '../services/tursoService';
 import { ChevronRight, ChevronDown, Lock, BookOpen, Zap, CheckCircle2 } from 'lucide-react';
 
 // Units unlocked if previous unit is "completed" (stored in localStorage for now)
@@ -14,10 +15,14 @@ function getCompletedUnits(): Set<string> {
   return new Set();
 }
 
-function markUnitCompleted(id: string) {
+function markUnitCompleted(id: string, userId: string) {
   const completed = getCompletedUnits();
   completed.add(id);
   localStorage.setItem('completed_units', JSON.stringify([...completed]));
+
+  // Queue for the server. Stays local until the sync runs, so finishing a
+  // lesson offline is never lost.
+  tursoService.enqueueSyncItem(userId, 'unit_completed', { unitId: id, drillScore: 100 });
 }
 
 interface StructuredProgramProps {
@@ -51,7 +56,7 @@ export const StructuredProgram: React.FC<StructuredProgramProps> = ({
         cefrLevel={cefrLevel}
         onClose={() => setActiveUnit(null)}
         onCompleted={(id) => {
-          markUnitCompleted(id);
+          markUnitCompleted(id, userId);
           setCompletedUnits(getCompletedUnits());
           setActiveUnit(null);
         }}

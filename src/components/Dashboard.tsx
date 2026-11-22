@@ -65,10 +65,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [currentUser, setCurrentUser] = useState<TursoUser | null>(tursoService.getCurrentUser());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(initialAdminOpen);
-  const [tursoUrlInput, setTursoUrlInput] = useState('');
-  const [tursoTokenInput, setTursoTokenInput] = useState('');
-  const [tursoSaved, setTursoSaved] = useState(tursoService.isConfigured());
+  const [tursoSaved] = useState(tursoService.isConfigured());
   const [tursoSyncMsg, setTursoSyncMsg] = useState('');
+
+  // Push queued progress on open and whenever connectivity returns.
+  useEffect(() => {
+    if (!currentUser) return;
+    const drain = () => {
+      void tursoService.syncPendingQueue(currentUser.id);
+    };
+    drain();
+    window.addEventListener('online', drain);
+    return () => window.removeEventListener('online', drain);
+  }, [currentUser]);
 
   useEffect(() => {
     async function fetchLessons() {
@@ -459,74 +468,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Turso Cloud Database Connection */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm space-y-3">
+            <div className="space-y-3 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <Database className="w-4 h-4 text-indigo-600" />
-                  <span>Turso Database (Cloud SQLite)</span>
+                <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
+                  <Database className="h-4 w-4 text-indigo-600" />
+                  <span>Cloud Sync</span>
                 </span>
-                {tursoSaved && (
-                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Connected
-                  </span>
-                )}
+                <span
+                  className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    tursoSaved ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                  }`}
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  {tursoSaved ? 'Connected' : 'Not configured'}
+                </span>
               </div>
               <p className="text-xs text-slate-500">
-                Connect your Turso edge database. Each family member or sibling logs in with their own account; their progress is strictly isolated.
+                Progress is stored on this device and pushed to your account when you are online.
               </p>
-              <input
-                type="text"
-                value={tursoUrlInput}
-                onChange={(e) => setTursoUrlInput(e.target.value)}
-                placeholder="libsql://your-db-name.turso.io"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
-              <input
-                type="password"
-                value={tursoTokenInput}
-                onChange={(e) => setTursoTokenInput(e.target.value)}
-                placeholder="Turso Auth Token"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              />
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    const ok = tursoService.setConfig(tursoUrlInput, tursoTokenInput);
-                    if (ok) {
-                      setTursoSaved(true);
-                      setTursoSyncMsg('Turso database connected successfully!');
-                    } else {
-                      setTursoSyncMsg('Failed to connect. Check URL and token.');
-                    }
+                  onClick={async () => {
+                    if (!currentUser) return;
+                    setTursoSyncMsg('Syncing your progress…');
+                    const res = await tursoService.syncPendingQueue(currentUser.id);
+                    setTursoSyncMsg(
+                      res.success
+                        ? `Synced ${res.pushedCount} record${res.pushedCount === 1 ? '' : 's'}.`
+                        : `Sync failed: ${res.error}`
+                    );
                   }}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-sm active:scale-95 transition-all"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-60"
+                  disabled={!currentUser}
                 >
-                  Save Turso Credentials
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>Sync Now</span>
                 </button>
-                {tursoSaved && currentUser && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setTursoSyncMsg('Pushing offline progress to your Turso cloud...');
-                      const res = await tursoService.syncPendingQueue(currentUser.id);
-                      if (res.success) {
-                        setTursoSyncMsg(`Synced! ${res.pushedCount} offline records pushed.`);
-                      } else {
-                        setTursoSyncMsg(`Sync failed: ${res.error}`);
-                      }
-                    }}
-                    className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 active:scale-95"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Sync Now</span>
-                  </button>
-                )}
               </div>
               {tursoSyncMsg && (
-                <div className="text-[11px] text-indigo-600 font-bold pt-1">
-                  {tursoSyncMsg}
-                </div>
+                <div className="pt-1 text-[11px] font-bold text-indigo-600">{tursoSyncMsg}</div>
               )}
             </div>
 

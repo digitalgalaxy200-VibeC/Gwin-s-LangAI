@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { LessonUnit, VocabularyItem, VerbConjugationItem, SituationalExpression } from '../types/curriculum';
 import { curriculumRepo } from '../repositories/curriculumRepository';
 import { audioEngine } from '../services/audioEngine';
+import { tursoService } from '../services/tursoService';
 import { Volume2, ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, Sparkles, X } from 'lucide-react';
 import { InteractiveSentence } from './InteractiveSentence';
 
@@ -90,6 +91,8 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
         repetitionStage: 1,
         nextReviewAt: new Date(Date.now() + 86400000).toISOString(),
       });
+      // Queue the completion so it reaches the account on the next sync.
+      tursoService.enqueueSyncItem(userId, 'unit_completed', { unitId: lessonId, drillScore: 100 });
       setCurrentStep(totalSteps);
       onCompleted();
     }

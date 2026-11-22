@@ -1,11 +1,11 @@
 // ============================================================
-// TURSO SYNC & USER AUTHENTICATION SERVICE
-// Full offline-first architecture with strict user-id isolation.
-// If offline for days/weeks, local progress queues up safely.
-// When online, it syncs bidirectionally into the user's Turso account.
+// AUTH & SYNC SERVICE
+//
+// Talks to the Polyglot API Worker. The browser holds a session
+// token and the user's own profile — never database credentials,
+// and never a password hash. All privileged work (hashing,
+// registration, sync, admin queries) happens server-side.
 // ============================================================
-
-import { createClient, type Client } from '@libsql/client/web';
 
 export interface TursoUser {
   id: string;
@@ -18,11 +18,6 @@ export interface TursoUser {
   role?: 'learner' | 'superadmin';
 }
 
-export interface TursoConfig {
-  databaseUrl: string;
-  authToken: string;
-}
-
 export interface SyncPendingQueueItem {
   id: string;
   userId: string;
@@ -31,102 +26,120 @@ export interface SyncPendingQueueItem {
   timestamp: string;
 }
 
-const CONFIG_STORAGE_KEY = 'turso_db_config_v1';
 const AUTH_USER_KEY = 'turso_current_user_v1';
+const SESSION_TOKEN_KEY = 'polyglot_session_v1';
 const PENDING_QUEUE_KEY = 'turso_pending_sync_queue_v1';
 
-// Build-time credentials so a device never needs the admin panel to connect.
-// Anything in VITE_* is inlined into the bundle and readable by every visitor.
-const ENV_DB_URL = (import.meta.env.VITE_TURSO_URL as string | undefined)?.trim();
-const ENV_DB_TOKEN = (import.meta.env.VITE_TURSO_TOKEN as string | undefined)?.trim();
+/** API origin, e.g. https://polyglot-api.example.workers.dev (no trailing slash). */
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/+$/, '') ?? '';
 
-// Simple SHA-256 password hash for client-side privacy
-async function hashPassword(password: string): Promise<string> {
-  const enc = new TextEncoder();
-  const buf = await crypto.subtle.digest('SHA-256', enc.encode(password));
-  return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+interface ApiResult<T> {
+  ok: boolean;
+  status: number;
+  data?: T;
+  error?: string;
 }
 
 export class TursoService {
-  private client: Client | null = null;
-  private config: TursoConfig | null = null;
+  private token: string | null = null;
 
   constructor() {
-    this.loadConfig();
+    try {
+      this.token = localStorage.getItem(SESSION_TOKEN_KEY);
+    } catch {
+      this.token = null;
+    }
   }
 
   // ── Configuration ──────────────────────────────────────────
-  public loadConfig(): TursoConfig | null {
-    try {
-      const raw = localStorage.getItem(CONFIG_STORAGE_KEY);
-      if (raw) {
-        this.config = JSON.parse(raw);
-        if (this.config && this.config.databaseUrl && this.config.authToken) {
-          this.client = createClient({
-            url: this.config.databaseUrl,
-            authToken: this.config.authToken,
-          });
-        }
-      }
-    } catch {
-      this.config = null;
-      this.client = null;
-    }
-
-    // No device-local config: fall back to the build-time credentials
-    if (!this.client && ENV_DB_URL && ENV_DB_TOKEN) {
-      this.config = { databaseUrl: ENV_DB_URL, authToken: ENV_DB_TOKEN };
-      try {
-        this.client = createClient({ url: ENV_DB_URL, authToken: ENV_DB_TOKEN });
-      } catch {
-        this.client = null;
-      }
-    }
-
-    return this.config;
-  }
-
-  public setConfig(url: string, token: string): boolean {
-    const cleanUrl = url.trim();
-    const cleanToken = token.trim();
-    if (!cleanUrl || !cleanToken) return false;
-
-    this.config = { databaseUrl: cleanUrl, authToken: cleanToken };
-    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(this.config));
-
-    try {
-      this.client = createClient({
-        url: cleanUrl,
-        authToken: cleanToken,
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
 
   public isConfigured(): boolean {
-    return !!this.client;
+    return Boolean(API_BASE);
   }
 
-  // ── User Authentication (Offline First with Online Cloud Verification) ──
+  public getApiBase(): string {
+    return API_BASE;
+  }
+
+  private setToken(token: string | null): void {
+    this.token = token;
+    try {
+      if (token) localStorage.setItem(SESSION_TOKEN_KEY, token);
+      else localStorage.removeItem(SESSION_TOKEN_KEY);
+    } catch {
+      // Storage unavailable — session stays in memory only
+    }
+  }
+
+  private async api<T>(
+    path: string,
+    init: { method?: string; body?: unknown; auth?: boolean } = {}
+  ): Promise<ApiResult<T>> {
+    if (!API_BASE) {
+      return {
+        ok: false,
+        status: 0,
+        error: 'The app has no API URL configured (VITE_API_URL).',
+      };
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}${path}`, {
+        method: init.method ?? 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(init.auth && this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        },
+        body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      });
+
+      const text = await res.text();
+      const data = text ? (JSON.parse(text) as T & { error?: string }) : undefined;
+
+      if (!res.ok) {
+        return {
+          ok: false,
+          status: res.status,
+          error: (data as { error?: string } | undefined)?.error ?? `Request failed (${res.status}).`,
+        };
+      }
+      return { ok: true, status: res.status, data: data as T };
+    } catch (err) {
+      return {
+        ok: false,
+        status: 0,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  // ── Session ────────────────────────────────────────────────
+
   public getCurrentUser(): TursoUser | null {
     try {
       const raw = localStorage.getItem(AUTH_USER_KEY);
       if (raw) return JSON.parse(raw) as TursoUser;
-    } catch {}
+    } catch {
+      // Corrupted value — treat as signed out
+    }
     return null;
   }
 
   public setCurrentUser(user: TursoUser | null): void {
-    if (user) {
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(AUTH_USER_KEY);
+    try {
+      if (user) localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      else localStorage.removeItem(AUTH_USER_KEY);
+    } catch {
+      // Ignore storage failures
     }
   }
+
+  public logout(): void {
+    this.setCurrentUser(null);
+    this.setToken(null);
+  }
+
+  // ── Auth ───────────────────────────────────────────────────
 
   public async register(
     email: string,
@@ -135,49 +148,16 @@ export class TursoService {
     nativeLang: 'en' | 'fr' = 'en',
     targetLang: 'fr' | 'en' = 'fr'
   ): Promise<{ success: boolean; user?: TursoUser; error?: string }> {
-    const cleanEmail = email.toLowerCase().trim();
-    const passHash = await hashPassword(passwordPlain);
-    const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const res = await this.api<{ user: TursoUser; token: string }>('/auth/register', {
+      method: 'POST',
+      body: { email, password: passwordPlain, name, nativeLang, targetLang },
+    });
 
-    const newUser: TursoUser = {
-      id: userId,
-      email: cleanEmail,
-      name: name.trim() || cleanEmail.split('@')[0],
-      nativeLang,
-      targetLang,
-      cefrLevel: 'A1',
-      dailyGoal: 15,
-    };
+    if (!res.ok || !res.data) return { success: false, error: res.error };
 
-    // Save locally immediately so learner can start learning offline without waiting
-    this.setCurrentUser(newUser);
-
-    // If Turso client is configured, save into cloud
-    if (this.client) {
-      try {
-        await this.client.execute({
-          sql: `INSERT INTO users (id, email, password_hash, name, native_lang, target_lang, cefr_level, daily_goal)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          args: [
-            newUser.id,
-            newUser.email,
-            passHash,
-            newUser.name,
-            newUser.nativeLang,
-            newUser.targetLang,
-            newUser.cefrLevel,
-            newUser.dailyGoal,
-          ],
-        });
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('UNIQUE constraint')) {
-          return { success: false, error: 'An account with this email already exists.' };
-        }
-      }
-    }
-
-    return { success: true, user: newUser };
+    this.setToken(res.data.token);
+    this.setCurrentUser(res.data.user);
+    return { success: true, user: res.data.user };
   }
 
   public async login(
@@ -185,138 +165,42 @@ export class TursoService {
     passwordPlain: string
   ): Promise<{ success: boolean; user?: TursoUser; error?: string }> {
     const cleanEmail = email.toLowerCase().trim();
-    const passHash = await hashPassword(passwordPlain);
+    const res = await this.api<{ user: TursoUser; token: string }>('/auth/login', {
+      method: 'POST',
+      body: { email: cleanEmail, password: passwordPlain },
+    });
 
-    // If online with Turso
-    let cloudError = '';
-    if (this.client) {
-      try {
-        const res = await this.client.execute({
-          sql: `SELECT id, email, name, native_lang, target_lang, cefr_level, daily_goal, password_hash,
-                       COALESCE(role, 'learner') AS role
-                FROM users WHERE email = ?`,
-          args: [cleanEmail],
-        });
-
-        if (res.rows.length === 0) {
-          return { success: false, error: 'No account found with this email.' };
-        }
-
-        const row = res.rows[0];
-        if (String(row.password_hash) !== passHash) {
-          return { success: false, error: 'Incorrect password.' };
-        }
-
-        const user: TursoUser = {
-          id: String(row.id),
-          email: String(row.email),
-          name: String(row.name),
-          nativeLang: (row.native_lang as 'en' | 'fr') || 'en',
-          targetLang: (row.target_lang as 'fr' | 'en') || 'fr',
-          cefrLevel: String(row.cefr_level || 'A1'),
-          dailyGoal: Number(row.daily_goal || 15),
-          role: (row.role as 'learner' | 'superadmin') || 'learner',
-        };
-
-        this.setCurrentUser(user);
-
-        // Pull user's cloud progress down to local device
-        await this.pullUserDataFromCloud(user.id);
-
-        return { success: true, user };
-      } catch (err: unknown) {
-        // Remember why the cloud call failed so the user gets a useful message
-        cloudError = err instanceof Error ? err.message : String(err);
-      }
+    if (res.ok && res.data) {
+      this.setToken(res.data.token);
+      this.setCurrentUser(res.data.user);
+      await this.pullUserDataFromCloud(res.data.user.id);
+      return { success: true, user: res.data.user };
     }
 
-    // Local fallback: an already-authenticated session on this device
-    const localUser = this.getCurrentUser();
-    if (localUser && localUser.email.toLowerCase() === cleanEmail) {
-      return { success: true, user: localUser };
+    // Network unavailable: allow re-entry with the cached session so a
+    // learner who is already signed in here can keep working offline.
+    const cached = this.getCurrentUser();
+    if (res.status === 0 && cached && cached.email.toLowerCase() === cleanEmail) {
+      return { success: true, user: cached };
     }
 
-    if (!this.client) {
-      return {
-        success: false,
-        error:
-          'This device is not connected to the database yet. Open the Super Admin Portal and save your Turso URL and auth token.',
-      };
-    }
-
-    return {
-      success: false,
-      error: `Cannot connect to server: ${cloudError || 'the database returned no result.'}`,
-    };
+    return { success: false, error: res.error ?? 'Sign in failed.' };
   }
 
-  public logout(): void {
-    this.setCurrentUser(null);
-  }
-
-  /**
-   * Super admin sign-in. Unlike login(), this refuses any account whose
-   * `role` is not 'superadmin' and never falls back to a cached local user.
-   */
   public async loginSuperAdmin(
     email: string,
     passwordPlain: string
   ): Promise<{ success: boolean; user?: TursoUser; error?: string }> {
-    if (!this.client) {
-      return { success: false, error: 'Turso database is not connected yet.' };
+    const res = await this.login(email, passwordPlain);
+    if (!res.success || !res.user) return res;
+
+    if (res.user.role !== 'superadmin') {
+      return { success: false, error: 'This account does not have super admin access.' };
     }
-
-    const cleanEmail = email.toLowerCase().trim();
-    const passHash = await hashPassword(passwordPlain);
-
-    try {
-      const res = await this.client.execute({
-        sql: `SELECT id, email, name, native_lang, target_lang, cefr_level, daily_goal, password_hash,
-                     COALESCE(role, 'learner') AS role
-              FROM users WHERE email = ?`,
-        args: [cleanEmail],
-      });
-
-      if (res.rows.length === 0) {
-        return { success: false, error: 'No account found with this email.' };
-      }
-
-      const row = res.rows[0];
-      if (String(row.role) !== 'superadmin') {
-        return { success: false, error: 'This account does not have super admin access.' };
-      }
-
-      if (String(row.password_hash) !== passHash) {
-        return { success: false, error: 'Incorrect password.' };
-      }
-
-      const user: TursoUser = {
-        id: String(row.id),
-        email: String(row.email),
-        name: String(row.name),
-        nativeLang: (row.native_lang as 'en' | 'fr') || 'en',
-        targetLang: (row.target_lang as 'fr' | 'en') || 'fr',
-        cefrLevel: String(row.cefr_level || 'A1'),
-        dailyGoal: Number(row.daily_goal || 15),
-        role: 'superadmin',
-      };
-
-      return { success: true, user };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('no such column') || msg.includes('role')) {
-        return {
-          success: false,
-          error: 'Database is missing the users.role column. Run docs/turso_seed_superadmin.sql.',
-        };
-      }
-      return { success: false, error: `Sign-in failed: ${msg}` };
-    }
+    return res;
   }
 
-  // ── Offline Queue & Sync Engine ─────────────────────────────
-  // Every action (completed unit, weak word) queues locally when offline.
-  // When online, queue pushes to Turso strictly isolated by user_id.
+  // ── Offline queue & sync ───────────────────────────────────
 
   public enqueueSyncItem(
     userId: string,
@@ -334,7 +218,9 @@ export class TursoService {
         timestamp: new Date().toISOString(),
       });
       localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(queue));
-    } catch {}
+    } catch {
+      // Queue is best-effort
+    }
   }
 
   public getPendingQueueCount(userId: string): number {
@@ -348,88 +234,63 @@ export class TursoService {
     }
   }
 
-  public async syncPendingQueue(userId: string): Promise<{ pushedCount: number; success: boolean; error?: string }> {
-    if (!this.client) {
-      return { pushedCount: 0, success: false, error: 'Turso database is not connected.' };
+  public async syncPendingQueue(
+    userId: string
+  ): Promise<{ pushedCount: number; success: boolean; error?: string }> {
+    if (!this.token) {
+      return { pushedCount: 0, success: false, error: 'Sign in to sync your progress.' };
     }
 
+    let queue: SyncPendingQueueItem[] = [];
     try {
       const raw = localStorage.getItem(PENDING_QUEUE_KEY);
-      if (!raw) return { pushedCount: 0, success: true };
+      queue = raw ? JSON.parse(raw) : [];
+    } catch {
+      queue = [];
+    }
 
-      const queue: SyncPendingQueueItem[] = JSON.parse(raw);
-      const userItems = queue.filter(q => q.userId === userId);
-      const remainingItems = queue.filter(q => q.userId !== userId);
+    const mine = queue.filter(q => q.userId === userId);
+    if (mine.length === 0) return { pushedCount: 0, success: true };
 
-      if (userItems.length === 0) return { pushedCount: 0, success: true };
+    const res = await this.api<{ pushed: number }>('/sync/push', {
+      method: 'POST',
+      auth: true,
+      body: { items: mine },
+    });
 
-      for (const item of userItems) {
-        if (item.eventType === 'unit_completed') {
-          const unitId = String(item.payload.unitId);
-          const score = Number(item.payload.drillScore || 100);
-          await this.client.execute({
-            sql: `INSERT INTO user_progress (id, user_id, unit_id, completed, drill_score, completed_at)
-                  VALUES (?, ?, ?, 1, ?, datetime('now'))
-                  ON CONFLICT(user_id, unit_id) DO UPDATE SET drill_score = excluded.drill_score, completed_at = datetime('now')`,
-            args: [`prog_${item.id}`, userId, unitId, score],
-          });
-        }
+    if (!res.ok) {
+      return { pushedCount: 0, success: false, error: res.error };
+    }
 
-        if (item.eventType === 'weakness_updated') {
-          const word = String(item.payload.word);
-          const shown = Number(item.payload.shownAnswer || 0);
-          const wrong = Number(item.payload.wrongChoices || 0);
-          await this.client.execute({
-            sql: `INSERT INTO user_weaknesses (id, user_id, word, shown_answer, wrong_choices, total_seen, last_seen)
-                  VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-                  ON CONFLICT(user_id, word) DO UPDATE SET 
-                    shown_answer = shown_answer + excluded.shown_answer,
-                    wrong_choices = wrong_choices + excluded.wrong_choices,
-                    total_seen = total_seen + 1,
-                    last_seen = datetime('now')`,
-            args: [`weak_${item.id}`, userId, word, shown, wrong, shown + wrong + 1],
-          });
-        }
+    try {
+      const remaining = queue.filter(q => q.userId !== userId);
+      localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(remaining));
+    } catch {
+      // Ignore storage failures
+    }
 
-        // Log sync event for history audit
-        await this.client.execute({
-          sql: `INSERT INTO sync_events (id, user_id, event_type, payload_json) VALUES (?, ?, ?, ?)`,
-          args: [item.id, userId, item.eventType, JSON.stringify(item.payload)],
-        });
-      }
+    return { pushedCount: res.data?.pushed ?? mine.length, success: true };
+  }
 
-      // Save only items belonging to other users (clear this user's pushed items)
-      localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(remainingItems));
-      return { pushedCount: userItems.length, success: true };
-    } catch (err) {
-      return {
-        pushedCount: 0,
-        success: false,
-        error: err instanceof Error ? err.message : String(err),
-      };
+  /** Pull the learner's completed units back into local state. */
+  public async pullUserDataFromCloud(_userId: string): Promise<void> {
+    if (!this.token) return;
+
+    const res = await this.api<{ completedUnits: string[] }>('/me/progress', { auth: true });
+    if (!res.ok || !res.data) return;
+
+    try {
+      const raw = localStorage.getItem('completed_units');
+      const local: string[] = raw ? JSON.parse(raw) : [];
+      const merged = new Set<string>([...local, ...res.data.completedUnits]);
+      localStorage.setItem('completed_units', JSON.stringify([...merged]));
+    } catch {
+      // Ignore storage failures
     }
   }
 
-  // Pull down cloud progress to make sure the user's phone has their full history
-  public async pullUserDataFromCloud(userId: string): Promise<void> {
-    if (!this.client) return;
+  // ── Admin ──────────────────────────────────────────────────
 
-    try {
-      // 1. Progress
-      const progRes = await this.client.execute({
-        sql: `SELECT unit_id FROM user_progress WHERE user_id = ? AND completed = 1`,
-        args: [userId],
-      });
-      if (progRes.rows.length > 0) {
-        const rawLocal = localStorage.getItem('completed_units');
-        const set = new Set<string>(rawLocal ? JSON.parse(rawLocal) : []);
-        progRes.rows.forEach(r => set.add(String(r.unit_id)));
-        localStorage.setItem('completed_units', JSON.stringify([...set]));
-      }
-    } catch {}
-  }
-
-  // ── SUPER ADMIN DASHBOARD QUERIES ──────────────────────────
   public async fetchAdminLearnerStats(): Promise<{
     users: {
       id: string;
@@ -443,70 +304,14 @@ export class TursoService {
       lastLogin: string;
       completedUnitsCount: number;
       weakWordsCount: number;
-      consistencyRate: number; // Percentage based on activity
+      consistencyRate: number;
     }[];
     totalUsers: number;
     totalUnitsCompleted: number;
   }> {
-    if (!this.client) {
-      return { users: [], totalUsers: 0, totalUnitsCompleted: 0 };
-    }
-
-    try {
-      const usersRes = await this.client.execute(`
-        SELECT id, email, name, native_lang, target_lang, cefr_level, daily_goal, created_at, last_login
-        FROM users
-        ORDER BY created_at DESC
-      `);
-
-      const progressRes = await this.client.execute(`
-        SELECT user_id, COUNT(*) as cnt FROM user_progress WHERE completed = 1 GROUP BY user_id
-      `);
-
-      const weakRes = await this.client.execute(`
-        SELECT user_id, COUNT(*) as cnt FROM user_weaknesses GROUP BY user_id
-      `);
-
-      const progressMap = new Map<string, number>();
-      progressRes.rows.forEach(r => progressMap.set(String(r.user_id), Number(r.cnt)));
-
-      const weakMap = new Map<string, number>();
-      weakRes.rows.forEach(r => weakMap.set(String(r.user_id), Number(r.cnt)));
-
-      let totalUnits = 0;
-      const formatted = usersRes.rows.map(u => {
-        const uid = String(u.id);
-        const completed = progressMap.get(uid) || 0;
-        totalUnits += completed;
-        const weak = weakMap.get(uid) || 0;
-
-        // Calculate consistency metric (units done vs total 20 units)
-        const consistencyRate = Math.min(100, Math.round((completed / 20) * 100));
-
-        return {
-          id: uid,
-          email: String(u.email),
-          name: String(u.name),
-          nativeLang: String(u.native_lang || 'en'),
-          targetLang: String(u.target_lang || 'fr'),
-          cefrLevel: String(u.cefr_level || 'A1'),
-          dailyGoal: Number(u.daily_goal || 15),
-          createdAt: String(u.created_at || ''),
-          lastLogin: String(u.last_login || ''),
-          completedUnitsCount: completed,
-          weakWordsCount: weak,
-          consistencyRate,
-        };
-      });
-
-      return {
-        users: formatted,
-        totalUsers: formatted.length,
-        totalUnitsCompleted: totalUnits,
-      };
-    } catch {
-      return { users: [], totalUsers: 0, totalUnitsCompleted: 0 };
-    }
+    const empty = { users: [], totalUsers: 0, totalUnitsCompleted: 0 };
+    const res = await this.api<typeof empty>('/admin/learners', { auth: true });
+    return res.ok && res.data ? res.data : empty;
   }
 }
 
