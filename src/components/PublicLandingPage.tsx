@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { 
-  Sparkles, 
+import { audioEngine } from '../services/audioEngine';
+import {
   ArrowRight, 
   Volume2, 
   WifiOff, 
@@ -58,6 +58,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       loginBtn: "Learner Login",
       getStartedBtn: "Get Started",
       guestBtn: "Explore as Guest",
+      previewLabel: "Today's drill",
+      previewPhrase: "Je voudrais parler avec le responsable, s'il vous plaît.",
+      previewPhonetic: "/ʒə vu.dʁɛ paʁ.le a.vɛk lə ʁɛs.pɔ̃.sabl/",
+      previewMeaning: "I would like to speak with the manager, please.",
+      previewProgressLabel: "3 of 8 expressions",
+      previewHint: "Tap to hear the phrase · works offline",
       heroBadge: "The High-Speed Diplomatic & Field Operative Protocol",
       heroTitle1: "Speak Conversational French in ",
       heroDays: "14 Days",
@@ -176,6 +182,12 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
       loginBtn: "Connexion",
       getStartedBtn: "Commencer",
       guestBtn: "Essayer en Invité",
+      previewLabel: "Exercice du jour",
+      previewPhrase: "Je voudrais parler avec le responsable, s'il vous plaît.",
+      previewPhonetic: "/ʒə vu.dʁɛ paʁ.le a.vɛk lə ʁɛs.pɔ̃.sabl/",
+      previewMeaning: "Je souhaite m'entretenir avec le responsable, s'il vous plaît.",
+      previewProgressLabel: "3 expressions sur 8",
+      previewHint: "Appuyez pour écouter · fonctionne hors-ligne",
       heroBadge: "Le Protocole Rapide des Services Diplomatiques & Opérationnels",
       heroTitle1: "Parlez Français Couramment en ",
       heroDays: "14 Jours",
@@ -292,9 +304,9 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white antialiased">
       
-      {/* Top Banner: Limited Early Cohort Notice */}
-      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-gradient-to-r from-indigo-900 via-indigo-600 to-sky-700 px-3 py-2 text-center text-[10px] font-bold leading-snug tracking-wide text-white sm:px-4 sm:text-xs">
-        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase text-slate-950 sm:text-[10px]">{cur.topBannerTag}</span>
+      {/* Top Banner: cohort notice */}
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 border-b border-white/5 bg-white/[0.02] px-3 py-2 text-center text-[10px] font-semibold leading-snug tracking-wide text-slate-400 sm:px-4 sm:text-xs">
+        <span className="rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-300 sm:text-[10px]">{cur.topBannerTag}</span>
         <span>{cur.topBannerText}</span>
       </div>
 
@@ -377,73 +389,103 @@ export const PublicLandingPage: React.FC<PublicLandingPageProps> = ({
         </div>
       </nav>
 
-      {/* SECTION 1: HERO - High-Converting Hook */}
-      <header className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
-        {/* Glow Effects */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-indigo-600/20 blur-[140px] rounded-full pointer-events-none -z-10" />
-        <div className="absolute top-1/3 right-10 w-[350px] h-[300px] bg-sky-500/15 blur-[120px] rounded-full pointer-events-none -z-10" />
-
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-400/30 text-indigo-300 text-xs sm:text-sm font-bold shadow-sm">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>{cur.heroBadge}</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-[1.1]">
-            {cur.heroTitle1}<span className="bg-gradient-to-r from-amber-300 via-sky-300 to-indigo-400 bg-clip-text text-transparent">{cur.heroDays}</span>.<br />
-            {cur.heroTitle2}
-          </h1>
-
-          <p className="text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
-            {cur.heroDesc}
-          </p>
-
-          {/* Key Value Checks */}
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-slate-300 text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>{cur.check1}</span>
+      {/* SECTION 1: HERO — the product before the claims */}
+      <header className="relative border-b border-white/5">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-center lg:gap-14 lg:px-8 lg:py-20">
+          {/* Copy */}
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300 sm:text-[11px]">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span>{cur.heroBadge}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>{cur.check2}</span>
+
+            <h1 className="mt-5 text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-5xl">
+              {cur.heroTitle1}{cur.heroDays}.
+              <span className="mt-1 block text-slate-400">{cur.heroTitle2}</span>
+            </h1>
+
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
+              {cur.heroDesc}
+            </p>
+
+            <ul className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-slate-400">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>{cur.check1}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>{cur.check2}</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>{cur.check3}</span>
+              </li>
+            </ul>
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                onClick={onGetStarted}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-black text-white transition-colors hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 active:scale-[0.99] sm:w-auto"
+              >
+                <span>{cur.ctaPrimary}</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={onSignIn}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-6 py-3.5 text-sm font-bold text-slate-200 transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 sm:w-auto"
+              >
+                {cur.ctaSecondary}
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>{cur.check3}</span>
+
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+              <button
+                onClick={onContinueAsGuest}
+                className="font-bold text-indigo-300 underline underline-offset-4 transition-colors hover:text-white"
+              >
+                {cur.ctaGuest} ➔
+              </button>
+              <span className="hidden text-slate-600 sm:inline">•</span>
+              <span>{cur.heroNote}</span>
             </div>
           </div>
 
-          {/* Call to Actions */}
-          <div className="pt-4 flex flex-col sm:flex-row gap-3.5 justify-center max-w-lg mx-auto">
-            <button
-              onClick={onGetStarted}
-              className="w-full py-4 px-8 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-2xl font-black text-base shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
-            >
-              <span>{cur.ctaPrimary}</span>
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onSignIn}
-              className="w-full py-4 px-6 bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10 rounded-2xl font-bold text-sm transition-all active:scale-95"
-            >
-              {cur.ctaSecondary}
-            </button>
-          </div>
+          {/* The product itself: a working drill card, not a mockup */}
+          <div className="w-full max-w-md lg:max-w-none lg:justify-self-end">
+            <div className="rounded-2xl border border-white/10 bg-[#0b1220] p-4 shadow-2xl shadow-black/40 sm:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  {cur.previewLabel}
+                </span>
+                <span className="text-[10px] font-bold text-slate-500">{cur.previewProgressLabel}</span>
+              </div>
 
-          <div className="pt-1">
-            <button
-              onClick={onContinueAsGuest}
-              className="text-xs text-indigo-300 hover:text-white font-bold underline underline-offset-4 transition-colors cursor-pointer"
-            >
-              {cur.ctaGuest} ➔
-            </button>
+              <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.03] p-4">
+                <p className="text-lg font-bold leading-snug text-white">{cur.previewPhrase}</p>
+                <p className="mt-1.5 font-mono text-[11px] text-slate-500">{cur.previewPhonetic}</p>
+                <p className="mt-3 border-t border-white/5 pt-3 text-sm text-slate-300">{cur.previewMeaning}</p>
+
+                <div className="mt-4 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => audioEngine.play(cur.previewPhrase, 'fr', 0.85)}
+                    aria-label={cur.previewLabel}
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-indigo-600 text-white transition-colors hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400 active:scale-95"
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div className="h-full w-[37%] rounded-full bg-emerald-400" />
+                    </div>
+                    <p className="mt-1.5 truncate text-[10px] text-slate-500">{cur.previewHint}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <p className="text-xs text-slate-500">
-            {cur.heroNote}
-          </p>
         </div>
       </header>
 

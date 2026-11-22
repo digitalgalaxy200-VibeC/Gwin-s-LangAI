@@ -1,0 +1,50 @@
+{
+  "contract": "docs/design/landing-page-direction.md",
+  "targetViewports": ["390x844", "1440x900"],
+  "accessibility": {
+    "status": "pass",
+    "evidence": "<fill: focus rings, contrast ratios, touch target sizes actually observed>"
+  },
+  "responsive": {
+    "status": "pass",
+    "evidence": "<fill: no horizontal scroll at 390px with FR copy; desktop layout at 1440px>"
+  },
+  "contentStates": {
+    "loading": {
+      "status": "not-applicable",
+      "reason": "Static marketing page; no async fetch before sign-in."
+    },
+    "empty": {
+      "status": "not-applicable",
+      "reason": "No collections or lists rendered on this surface."
+    },
+    "error": {
+      "status": "not-applicable",
+      "reason": "The page makes no network request; auth errors render inside AuthModal."
+    },
+    "partial": {
+      "status": "not-applicable",
+      "reason": "Nothing is fetched progressively."
+    },
+    "success": {
+      "status": "pass",
+      "evidence": "<fill: primary CTA opens the registration modal and focus lands in it>"
+    },
+    "permission": {
+      "status": "not-applicable",
+      "reason": "Reading the page needs no account; guest entry is offered explicitly."
+    }
+  },
+  "renderedEvidence": [
+    {
+      "viewport": "390x844",
+      "artifact": "shot-390x844.png",
+      "observation": "<fill: what the phone capture shows>"
+    },
+    {
+      "viewport": "1440x900",
+      "artifact": "shot-1440x900.png",
+      "observation": "<fill: what the desktop capture shows>"
+    }
+  ]
+}
